@@ -1,16 +1,53 @@
 
 import React, { useState, useMemo } from 'react';
-import { Transaction, TransactionType } from '../types';
+import { Transaction, TransactionType, Task } from '../types';
 import { translations, Language } from '../translations';
 
 interface AnalyticsViewProps {
   transactions: Transaction[];
+  completedTasks: Task[]; // NEW PROP: Need task history for Heatmap
   lang: Language;
 }
 
-export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ transactions, lang }) => {
+export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ transactions, completedTasks, lang }) => {
   const t = translations[lang];
   
+  // --- HEATMAP LOGIC ---
+  const heatmapData = useMemo(() => {
+      // Generate last 365 days
+      const days = [];
+      const today = new Date();
+      const activityMap = new Map<string, number>();
+      
+      // Map completed tasks to YYYY-MM-DD
+      completedTasks.forEach(task => {
+          if (task.completedAt) {
+              const dateStr = new Date(task.completedAt).toISOString().split('T')[0];
+              activityMap.set(dateStr, (activityMap.get(dateStr) || 0) + 1);
+          }
+      });
+
+      // Fill last 364 days + today
+      for (let i = 364; i >= 0; i--) {
+          const d = new Date();
+          d.setDate(today.getDate() - i);
+          const dateStr = d.toISOString().split('T')[0];
+          days.push({
+              date: dateStr,
+              count: activityMap.get(dateStr) || 0
+          });
+      }
+      return days;
+  }, [completedTasks]);
+
+  const getHeatmapColor = (count: number) => {
+      if (count === 0) return 'bg-hell-900/50';
+      if (count === 1) return 'bg-hell-700';
+      if (count <= 3) return 'bg-hell-lava';
+      return 'bg-hell-gold';
+  };
+
+  // --- FINANCE LOGIC ---
   // Get available years from transactions, default to current year
   const availableYears = useMemo(() => {
     const years = new Set<number>(transactions.map(t => new Date(t.date).getFullYear()));
@@ -83,6 +120,32 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ transactions, lang
 
   return (
     <div className="animate-flicker">
+        
+        {/* HEATMAP SECTION */}
+        <div className="mb-8 bg-bg-panel border border-hell-700 p-4 rounded-sm">
+            <h3 className="text-xs font-cinzel text-hell-gold uppercase tracking-widest mb-4 flex justify-between items-center">
+                {t.heatmapTitle}
+                <span className="text-[9px] text-text-muted font-mono">365 DAYS</span>
+            </h3>
+            <div className="flex flex-wrap gap-1 justify-center">
+                {heatmapData.map((day, i) => (
+                    <div 
+                        key={i} 
+                        title={`${day.date}: ${day.count}`}
+                        className={`w-2 h-2 sm:w-3 sm:h-3 rounded-[1px] ${getHeatmapColor(day.count)}`}
+                    />
+                ))}
+            </div>
+            <div className="flex justify-end items-center gap-2 mt-2 text-[9px] text-text-muted uppercase">
+                <span>{t.less}</span>
+                <div className="w-2 h-2 bg-hell-900/50"></div>
+                <div className="w-2 h-2 bg-hell-700"></div>
+                <div className="w-2 h-2 bg-hell-lava"></div>
+                <div className="w-2 h-2 bg-hell-gold"></div>
+                <span>{t.more}</span>
+            </div>
+        </div>
+
         {/* Header with Year Selector */}
         <div className="flex justify-between items-center mb-6 border-b border-hell-700 pb-4">
             <h2 className="text-xl font-cinzel text-hell-gold uppercase tracking-widest">{t.analyticsHeader}</h2>

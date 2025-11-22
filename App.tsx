@@ -12,6 +12,8 @@ import { AddGrimoireModal } from './components/AddGrimoireModal';
 import { HellButton } from './components/HellButton';
 import { BeliargSeal } from './components/BeliarghSeal'; 
 import { ConfirmationModal } from './components/ConfirmationModal';
+import { CritModal } from './components/CritModal';
+import { SettingsModal } from './components/SettingsModal'; // NEW IMPORT
 import { getDemonComment } from './services/geminiService';
 import { audioService } from './services/audioService';
 import { translations } from './translations';
@@ -47,6 +49,8 @@ const App: React.FC = () => {
   const [isFinanceModalOpen, setIsFinanceModalOpen] = useState(false);
   const [isRitualModalOpen, setIsRitualModalOpen] = useState(false);
   const [isGrimoireModalOpen, setIsGrimoireModalOpen] = useState(false);
+  const [isCritModalOpen, setIsCritModalOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false); // NEW STATE
   
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
@@ -155,6 +159,59 @@ const App: React.FC = () => {
     setTimeout(() => setShowDemonMessage(false), 6000);
   };
   
+  // --- Data Management (Export/Import) ---
+  const handleExportData = () => {
+      const data = {
+          tasks,
+          transactions,
+          rituals,
+          notes,
+          sigils,
+          stats,
+          theme,
+          lang,
+          version: '1.0'
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `beliarg_soul_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+  };
+
+  const handleImportData = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+          try {
+              const json = JSON.parse(event.target?.result as string);
+              if (json.tasks) setTasks(json.tasks);
+              if (json.transactions) setTransactions(json.transactions);
+              if (json.rituals) setRituals(json.rituals);
+              if (json.notes) setNotes(json.notes);
+              if (json.sigils) setSigils(json.sigils);
+              if (json.stats) setStats(json.stats);
+              if (json.theme) setTheme(json.theme);
+              if (json.lang) setLang(json.lang);
+              
+              triggerDemonMessage(t.importSuccess);
+              setIsSettingsOpen(false);
+          } catch (err) {
+              console.error("Import failed", err);
+              alert(t.importError);
+          }
+      };
+      reader.readAsText(file);
+      e.target.value = ''; // Reset input
+  };
+
+
   // --- Handlers: Sigils ---
   const handleCreateSigil = (title: string, color: string) => {
       const newSigil: Sigil = { id: crypto.randomUUID(), title, color };
@@ -197,7 +254,13 @@ const App: React.FC = () => {
         soulsCollected: prev.soulsCollected + 1,
       }));
       
-      if (Math.random() > 0.6) triggerDemonMessage();
+      // Critical Success Logic (10% Chance)
+      if (Math.random() > 0.90) {
+          setIsCritModalOpen(true);
+          if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 500]); // Heavy vibration
+      } else {
+          if (Math.random() > 0.6) triggerDemonMessage();
+      }
     }
   };
 
@@ -435,14 +498,10 @@ const App: React.FC = () => {
         </div>
 
         <div className="max-w-4xl mx-auto p-3 sm:p-4">
+          {/* CLEANED UP HEADER: Settings Button Only */}
           <div className="flex justify-end gap-4 mb-1 text-[10px] uppercase tracking-widest font-cinzel">
-             {/* Language & Theme Toggles */}
-             <button onClick={() => setLang(prev => prev === 'ru' ? 'en' : 'ru')} className="text-text-secondary hover:text-text-primary p-1">
-               {lang === 'ru' ? 'EN' : 'RU'}
-             </button>
-             <span className="text-hell-600 py-1">|</span>
-             <button onClick={() => setTheme(prev => prev === 'dark' ? 'light' : 'dark')} className="text-text-secondary hover:text-text-primary p-1">
-               {theme === 'dark' ? 'LIGHT' : 'DARK'}
+             <button onClick={() => setIsSettingsOpen(true)} className="text-hell-gold hover:text-hell-lava p-1 text-lg transition-transform hover:rotate-90">
+               ⚙️
              </button>
           </div>
 
@@ -714,7 +773,11 @@ const App: React.FC = () => {
         
         {/* VIEW: ANALYTICS */}
         {view === 'analytics' && (
-            <AnalyticsView transactions={transactions} lang={lang} />
+            <AnalyticsView 
+                transactions={transactions} 
+                completedTasks={historyTasks} // Pass completed tasks for Heatmap
+                lang={lang} 
+            />
         )}
 
         {/* VIEW: GRIMOIRE */}
@@ -795,6 +858,23 @@ const App: React.FC = () => {
         onConfirm={confirmDeleteItem}
         message={itemToDelete?.type === 'note' ? t.deleteNoteConfirm : t.deleteTransConfirm}
         lang={lang}
+      />
+
+      <CritModal 
+        isOpen={isCritModalOpen}
+        onClose={() => setIsCritModalOpen(false)}
+        lang={lang}
+      />
+
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        lang={lang}
+        theme={theme}
+        onSetLang={setLang}
+        onSetTheme={setTheme}
+        onExport={handleExportData}
+        onImport={handleImportData}
       />
 
     </div>

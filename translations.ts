@@ -1,4 +1,5 @@
 
+
 export type Language = 'ru' | 'en';
 
 export const translations = {
@@ -60,6 +61,9 @@ export const translations = {
     yearlyDebt: "Кровавый Долг",
     noTransInMonth: "В этом месяце тишина...",
     chartTitle: "Ритм Бездны",
+    heatmapTitle: "Пекло Активности",
+    less: "Меньше",
+    more: "Больше",
     
     // Filters
     filterDiff: "Сложность:",
@@ -80,6 +84,8 @@ export const translations = {
     execute: "ИСПОЛНИТЬ",
     confirmDelete: "Развеять эту цепь в пепел?",
     subtasks: "Звенья Цепи",
+    slideDelete: "Уничтожить",
+    slideComplete: "Исполнить",
     
     // Modals
     modalEditTitle: "Перековать Цепи",
@@ -121,25 +127,43 @@ export const translations = {
     deleteTransConfirm: "Вы уверены, что хотите удалить эту запись безвозвратно?",
     deleteNoteConfirm: "Сжечь этот свиток навсегда?",
 
-    // Market / Effects
+    // Critical Success
+    critSuccess: "БЛАГОСЛОВЕНИЕ БЕЗДНЫ",
+    critDesc: "Кузница ревет от восторга! Критический успех!",
+    
+    // Settings
+    settingsTitle: "Настройки Кузницы",
+    settingsVisual: "Облик Мира",
+    settingsData: "Сосуд Души (Данные)",
+    themeLight: "СВЕТ (ПЕПЕЛ)",
+    themeDark: "ТЬМА (ОБСИДИАН)",
+    langRu: "РУССКИЙ",
+    langEn: "ENGLISH",
+    backupDesc: "Сохрани свою душу в файл, чтобы воскресить её позже.",
+    btnExport: "ИЗВЛЕЧЬ ДУШУ (Скачать)",
+    btnImport: "ВОСКРЕСИТЬ (Загрузить)",
+    importSuccess: "Душа успешно возвращена в тело.",
+    importError: "Файл поврежден. Ритуал провален.",
+
+    // Market
+    marketTitle: "Рынок Душ",
+    marketDesc: "Обменяй золото на новые эффекты",
     effectFire: "Огонь",
     effectSoul: "Душа",
     effectVoid: "Пустота",
     effectBlood: "Кровь",
     effectGold: "Золото",
-    marketTitle: "Рынок Сущностей",
-    marketDesc: "Обменяй золото на новые эффекты",
-    cost: "Стоимость",
-    equipped: "Экипировано",
-    equip: "Экипировать",
-    buy: "Купить",
-    insufficientFunds: "Недостаточно средств",
+    cost: "Цена",
+    equipped: "ЭКИПИРОВАНО",
+    equip: "НАДЕТЬ",
+    buy: "КУПИТЬ",
+    insufficientFunds: "НЕТ ЗОЛОТА",
 
-    // Altar
-    contribute: "Внести",
-    altarFull: "Алтарь Наполнен",
+    // Altars
     modalAltarTitle: "Возвести Алтарь",
     labelTarget: "Цель (Золото)",
+    contribute: "ВНЕСТИ",
+    altarFull: "АЛТАРЬ ПОЛОН",
   },
   en: {
     appTitle: "BELIARG",
@@ -199,6 +223,9 @@ export const translations = {
     yearlyDebt: "Blood Debt",
     noTransInMonth: "Silence in this month...",
     chartTitle: "Rhythm of the Abyss",
+    heatmapTitle: "The Inferno",
+    less: "Less",
+    more: "More",
     
     // Filters
     filterDiff: "Difficulty:",
@@ -219,6 +246,8 @@ export const translations = {
     execute: "EXECUTE",
     confirmDelete: "Dispel this chain into ash?",
     subtasks: "Chain Links",
+    slideDelete: "Destroy",
+    slideComplete: "Execute",
     
     // Modals
     modalEditTitle: "Reforge Chains",
@@ -260,24 +289,42 @@ export const translations = {
     deleteTransConfirm: "Are you sure you want to delete this record permanently?",
     deleteNoteConfirm: "Burn this scroll forever?",
 
-    // Market / Effects
+    // Critical Success
+    critSuccess: "ABYSSAL BLESSING",
+    critDesc: "The Forge roars in delight! Critical Success!",
+    
+    // Settings
+    settingsTitle: "Forge Settings",
+    settingsVisual: "World Aspect",
+    settingsData: "Soul Vessel (Data)",
+    themeLight: "LIGHT (ASH)",
+    themeDark: "DARK (OBSIDIAN)",
+    langRu: "RUSSIAN",
+    langEn: "ENGLISH",
+    backupDesc: "Save your soul to a file to resurrect it later.",
+    btnExport: "EXTRACT SOUL (Download)",
+    btnImport: "RESURRECT (Upload)",
+    importSuccess: "Soul successfully returned to the body.",
+    importError: "File corrupted. Ritual failed.",
+
+    // Market
+    marketTitle: "Soul Market",
+    marketDesc: "Exchange gold for visual effects",
     effectFire: "Fire",
     effectSoul: "Soul",
     effectVoid: "Void",
     effectBlood: "Blood",
     effectGold: "Gold",
-    marketTitle: "Essence Market",
-    marketDesc: "Trade gold for new effects",
     cost: "Cost",
-    equipped: "Equipped",
-    equip: "Equip",
-    buy: "Buy",
-    insufficientFunds: "Insufficient Funds",
+    equipped: "EQUIPPED",
+    equip: "EQUIP",
+    buy: "BUY",
+    insufficientFunds: "NO GOLD",
 
-    // Altar
-    contribute: "Contribute",
-    altarFull: "Altar Full",
+    // Altars
     modalAltarTitle: "Erect Altar",
     labelTarget: "Target (Gold)",
+    contribute: "CONTRIBUTE",
+    altarFull: "ALTAR FULL",
   }
 };
