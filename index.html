@@ -15,10 +15,10 @@
     <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiQmVsaWFyZzogVGhlIEV0ZXJuYWwgRm9yZ2UiLCJzaG9ydF9uYW1lIjoiQmVsaWFyZyIs" />
     
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Added Google Fonts for Hellish Atmosphere -->
+    <!-- Added Google Fonts for Hellish Atmosphere + Hebrew Support (Rubik for readability) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Nosifer&family=Rye&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Nosifer&family=Rye&family=Roboto+Mono:wght@400;700&family=Rubik:wght@300;400;500;700;900&family=Rubik+Distressed&display=swap" rel="stylesheet">
     
     <script>
       tailwind.config = {
@@ -65,6 +65,12 @@
               'pupil-move': 'pupil-move 5s ease-in-out infinite',
               'pulse-demonic': 'pulse-demonic 3s ease-in-out infinite',
               'crit-shake': 'crit-shake 0.5s cubic-bezier(.36,.07,.19,.97) both',
+              'float': 'float 6s ease-in-out infinite',
+              'pulse-glow': 'pulse-glow 4s ease-in-out infinite',
+              'hammer': 'hammer 2.5s ease-in-out infinite',
+              'spark-fly-1': 'spark-fly-1 2.5s ease-out infinite',
+              'spark-fly-2': 'spark-fly-2 2.5s ease-out infinite',
+              'spark-fly-3': 'spark-fly-3 2.5s ease-out infinite',
             },
             keyframes: {
               flicker: {
@@ -91,6 +97,35 @@
                 '20%, 80%': { transform: 'translate3d(2px, 0, 0)' },
                 '30%, 50%, 70%': { transform: 'translate3d(-4px, 0, 0)' },
                 '40%, 60%': { transform: 'translate3d(4px, 0, 0)' }
+              },
+              float: {
+                '0%, 100%': { transform: 'translateY(0)' },
+                '50%': { transform: 'translateY(-10px)' }
+              },
+              'pulse-glow': {
+                '0%, 100%': { opacity: 0.5, filter: 'brightness(1)' },
+                '50%': { opacity: 1, filter: 'brightness(1.5)' }
+              },
+              hammer: {
+                '0%': { transform: 'rotate(45deg)' },
+                '15%': { transform: 'rotate(0deg)' }, /* Strike */
+                '25%': { transform: 'rotate(10deg)' }, /* Bounce */
+                '100%': { transform: 'rotate(45deg)' }
+              },
+              'spark-fly-1': {
+                '0%, 14%': { opacity: 0, transform: 'translate(0, 0) scale(0)' },
+                '15%': { opacity: 1, transform: 'translate(0, 0) scale(1)' },
+                '100%': { opacity: 0, transform: 'translate(-30px, 40px) scale(0)' }
+              },
+              'spark-fly-2': {
+                '0%, 14%': { opacity: 0, transform: 'translate(0, 0) scale(0)' },
+                '15%': { opacity: 1, transform: 'translate(0, 0) scale(1)' },
+                '100%': { opacity: 0, transform: 'translate(0px, 50px) scale(0)' }
+              },
+              'spark-fly-3': {
+                '0%, 14%': { opacity: 0, transform: 'translate(0, 0) scale(0)' },
+                '15%': { opacity: 1, transform: 'translate(0, 0) scale(1)' },
+                '100%': { opacity: 0, transform: 'translate(30px, 40px) scale(0)' }
               }
             }
           },
@@ -215,6 +250,23 @@
       
       [data-theme="light"] body {
          background-image: radial-gradient(circle at 50% 0%, #f3f4f6 0%, #d1d5db 100%);
+      }
+
+      /* --- HEBREW FONT OVERRIDES (Rubik for Readability) --- */
+      [lang="he"] body {
+          font-family: 'Rubik', sans-serif;
+      }
+      [lang="he"] .font-cinzel {
+          font-family: 'Rubik', sans-serif;
+          font-weight: 900;
+      }
+      [lang="he"] .font-serif {
+          font-family: 'Rubik', sans-serif;
+          font-weight: 400;
+      }
+      [lang="he"] .font-horror {
+          /* Keep Distressed for Horror accents, or switch to Rubik Black if preferred */
+          font-family: 'Rubik Distressed', cursive; 
       }
     </style>
   <script type="importmap">

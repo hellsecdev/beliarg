@@ -1,9 +1,27 @@
 
 
-export type Language = 'ru' | 'en';
+export type Language = 'ru' | 'en' | 'he';
 
 export const translations = {
   ru: {
+    // Auth
+    authTitle: "ВРАТА БЕЛИАРГА",
+    loginBtn: "ВОЙТИ",
+    registerBtn: "РЕГИСТРАЦИЯ",
+    emailLabel: "Электронная почта",
+    passwordLabel: "Пароль",
+    confirmPasswordLabel: "Повторите пароль",
+    authSubmit: "ОТКРЫТЬ ВРАТА",
+    authSwitchToReg: "Нет контракта? Подписать",
+    authSwitchToLogin: "Уже есть контракт? Войти",
+    authError: "Ошибка: Неверные данные",
+    passwordMismatch: "Ошибка: Пароли не совпадают",
+    logout: "РАЗОРВАТЬ КОНТРАКТ",
+    profile: "Профиль",
+    socialGoogle: "Войти через Google",
+    socialTelegram: "Войти через Telegram",
+    devBy: "Разработано с 🔥",
+    
     appTitle: "BELIARG",
     appSubtitle: "Менеджер Вечной Кузницы",
     summonSpell: "Bel’iarg, Dominar Infernalis • Ignis Ultimus surgat • Veni ad vocem Throni",
@@ -74,6 +92,11 @@ export const translations = {
     sortGoldDesc: "Богатые",
     sortGoldAsc: "Бедные",
     
+    // Difficulties
+    diffAsh: "ПЕПЕЛ (Легко)",
+    diffEmber: "УГЛИ (Средне)",
+    diffInferno: "ИНФЕРНО (Тяжко)",
+    
     // History View
     historyHeader: "Склеп Исполненного",
     burnArchive: "Сжечь Архив",
@@ -134,38 +157,49 @@ export const translations = {
     // Settings
     settingsTitle: "Настройки Кузницы",
     settingsVisual: "Облик Мира",
-    settingsData: "Сосуд Души (Данные)",
     themeLight: "СВЕТ (ПЕПЕЛ)",
     themeDark: "ТЬМА (ОБСИДИАН)",
     langRu: "РУССКИЙ",
     langEn: "ENGLISH",
-    backupDesc: "Сохрани свою душу в файл, чтобы воскресить её позже.",
-    btnExport: "ИЗВЛЕЧЬ ДУШУ (Скачать)",
-    btnImport: "ВОСКРЕСИТЬ (Загрузить)",
-    importSuccess: "Душа успешно возвращена в тело.",
-    importError: "Файл поврежден. Ритуал провален.",
-
-    // Market
-    marketTitle: "Рынок Душ",
-    marketDesc: "Обменяй золото на новые эффекты",
-    effectFire: "Огонь",
-    effectSoul: "Душа",
-    effectVoid: "Пустота",
-    effectBlood: "Кровь",
-    effectGold: "Золото",
-    cost: "Цена",
-    equipped: "ЭКИПИРОВАНО",
-    equip: "НАДЕТЬ",
-    buy: "КУПИТЬ",
-    insufficientFunds: "НЕТ ЗОЛОТА",
-
-    // Altars
-    modalAltarTitle: "Возвести Алтарь",
-    labelTarget: "Цель (Золото)",
-    contribute: "ВНЕСТИ",
-    altarFull: "АЛТАРЬ ПОЛОН",
+    langHe: "עברית",
+    
+    // Market/Altar Stubs (To prevent errors)
+    marketTitle: "",
+    marketDesc: "",
+    effectFire: "",
+    effectSoul: "",
+    effectVoid: "",
+    effectBlood: "",
+    effectGold: "",
+    cost: "",
+    buy: "",
+    equip: "",
+    equipped: "",
+    insufficientFunds: "",
+    modalAltarTitle: "",
+    labelTarget: "",
+    contribute: "",
+    altarFull: ""
   },
   en: {
+    // Auth
+    authTitle: "GATES OF BELIARG",
+    loginBtn: "ENTER",
+    registerBtn: "SIGN CONTRACT",
+    emailLabel: "Email",
+    passwordLabel: "Password",
+    confirmPasswordLabel: "Confirm Password",
+    authSubmit: "OPEN GATES",
+    authSwitchToReg: "No contract? Sign one",
+    authSwitchToLogin: "Have a contract? Enter",
+    authError: "Error: Invalid credentials",
+    passwordMismatch: "Error: Passwords do not match",
+    logout: "BREAK CONTRACT",
+    profile: "Profile",
+    socialGoogle: "Enter with Google",
+    socialTelegram: "Enter with Telegram",
+    devBy: "Developed with 🔥 by",
+
     appTitle: "BELIARG",
     appSubtitle: "Eternal Forge Manager",
     summonSpell: "Bel’iarg, Dominar Infernalis • Let the Last Fire rise • Come to the Throne",
@@ -235,6 +269,11 @@ export const translations = {
     sortManual: "Manual (Chains)",
     sortGoldDesc: "Richest",
     sortGoldAsc: "Poorest",
+
+    // Difficulties
+    diffAsh: "ASH (Easy)",
+    diffEmber: "EMBER (Medium)",
+    diffInferno: "INFERNO (Hard)",
     
     // History View
     historyHeader: "Crypt of the Fulfilled",
@@ -296,35 +335,206 @@ export const translations = {
     // Settings
     settingsTitle: "Forge Settings",
     settingsVisual: "World Aspect",
-    settingsData: "Soul Vessel (Data)",
     themeLight: "LIGHT (ASH)",
     themeDark: "DARK (OBSIDIAN)",
     langRu: "RUSSIAN",
     langEn: "ENGLISH",
-    backupDesc: "Save your soul to a file to resurrect it later.",
-    btnExport: "EXTRACT SOUL (Download)",
-    btnImport: "RESURRECT (Upload)",
-    importSuccess: "Soul successfully returned to the body.",
-    importError: "File corrupted. Ritual failed.",
+    langHe: "HEBREW",
 
-    // Market
-    marketTitle: "Soul Market",
-    marketDesc: "Exchange gold for visual effects",
-    effectFire: "Fire",
-    effectSoul: "Soul",
-    effectVoid: "Void",
-    effectBlood: "Blood",
-    effectGold: "Gold",
-    cost: "Cost",
-    equipped: "EQUIPPED",
-    equip: "EQUIP",
-    buy: "BUY",
-    insufficientFunds: "NO GOLD",
+    // Market/Altar Stubs
+    marketTitle: "",
+    marketDesc: "",
+    effectFire: "",
+    effectSoul: "",
+    effectVoid: "",
+    effectBlood: "",
+    effectGold: "",
+    cost: "",
+    buy: "",
+    equip: "",
+    equipped: "",
+    insufficientFunds: "",
+    modalAltarTitle: "",
+    labelTarget: "",
+    contribute: "",
+    altarFull: ""
+  },
+  he: {
+    // Auth
+    authTitle: "שערי בליארג",
+    loginBtn: "הכנס",
+    registerBtn: "חתום חוזה",
+    emailLabel: "אימייל",
+    passwordLabel: "סיסמה",
+    confirmPasswordLabel: "אשר סיסמה",
+    authSubmit: "פתח שערים",
+    authSwitchToReg: "אין חוזה? חתום אחד",
+    authSwitchToLogin: "יש חוזה? היכנס",
+    authError: "שגיאה: פרטים שגויים",
+    passwordMismatch: "שגיאה: הסיסמאות אינן תואמות",
+    logout: "הפר חוזה",
+    profile: "פרופיל",
+    socialGoogle: "הכנס עם גוגל",
+    socialTelegram: "הכנס עם טלגרם",
+    devBy: "פותח עם 🔥 על ידי",
 
-    // Altars
-    modalAltarTitle: "Erect Altar",
-    labelTarget: "Target (Gold)",
-    contribute: "CONTRIBUTE",
-    altarFull: "ALTAR FULL",
+    appTitle: "בליארג",
+    appSubtitle: "מנהל הכבשן הנצחי",
+    summonSpell: "בליארג, שליט התופת • האש האחרונה תקום • בוא לקול הכס",
+    footerSpell: "שרוף את החיים עד שהשמש תשתתק",
+    
+    // Stats
+    treasury: "אוצר",
+    
+    // Nav
+    navChains: "שלשלאות",
+    navTreasury: "אוצר",
+    navAsh: "אפר",
+    navAnalytics: "משפט",
+    navGrimoire: "גרימואר",
+    
+    // Active View
+    activeHeader: "פקודות הכבשן",
+    ritualsHeader: "טקסים יומיים",
+    newChain: "+ שלשלת חדשה",
+    newRitual: "+ טקס",
+    emptyStateTitle: "הכבשן מתקרר...",
+    emptyStateDesc: "תן לי עבודה, אדון.",
+    searchPlaceholder: "עין התהום (חיפוש)...",
+
+    // Grimoire View
+    grimoireHeader: "מגילות חוכמה",
+    newScroll: "+ מגילה חדשה",
+    emptyGrimoire: "הדפים ריקים. הידע ממתין לחריטה.",
+    modalGrimoireTitle: "חרוט מגילה",
+    labelNoteTitle: "כותרת המחשבה",
+    labelNoteContent: "תוכן",
+    placeholderNoteTitle: "כותרת...",
+    placeholderNoteContent: "שפוך את דעתך אל התהום...",
+    
+    // Finance View
+    financeHeader: "זרמי זהב",
+    balance: "מאזן",
+    addRecord: "+ רשומה",
+    tableDate: "תאריך",
+    tableDesc: "מהות",
+    tableGold: "זהב",
+    emptyFinance: "הספר ריק. הזהב דורש ספירה.",
+    tribute: "מנחה (הכנסה)",
+    sacrifice: "קורבן (הוצאה)",
+    recurring: "עינוי נצחי (חודשי עד סוף השנה)",
+
+    // Analytics View
+    analyticsHeader: "מאזני המשפט",
+    year: "שנה",
+    month: "חודש",
+    income: "מנחה",
+    expense: "קורבן",
+    net: "נטו",
+    yearlySurplus: "עודף תהומי",
+    yearlyDebt: "חוב דמים",
+    noTransInMonth: "שקט בחודש זה...",
+    chartTitle: "קצב התהום",
+    heatmapTitle: "התופת",
+    less: "פחות",
+    more: "יותר",
+    
+    // Filters
+    filterDiff: "קושי:",
+    filterAll: "הכל",
+    sortDeadline: "דדליין תחילה",
+    sortNewest: "חדש תחילה",
+    sortManual: "ידני (שלשלאות)",
+    sortGoldDesc: "העשירים",
+    sortGoldAsc: "העניים",
+
+    // Difficulties
+    diffAsh: "אפר (קל)",
+    diffEmber: "גחלת (בינוני)",
+    diffInferno: "תופת (קשה)",
+    
+    // History View
+    historyHeader: "קריפטת המושלמים",
+    burnArchive: "שרוף ארכיון",
+    sealStamped: "חותם הוטבע",
+    
+    // Task Card
+    overdue: "באיחור",
+    execute: "בצע",
+    confirmDelete: "להפיג את השרשרת הזו לאפר?",
+    subtasks: "חוליות השרשרת",
+    slideDelete: "השמד",
+    slideComplete: "בצע",
+    
+    // Modals
+    modalEditTitle: "חשול מחדש",
+    modalNewTitle: "חוזה חדש",
+    modalRitualTitle: "טקס חדש",
+    modalEditFinanceTitle: "שכתב גורל",
+    modalConfirmTitle: "השמד רשומה",
+    labelTitle: "מהות ההתחייבות",
+    labelDesc: "תנאי העינוי",
+    labelDeadline: "שעת הדין",
+    labelDifficulty: "כובד הנטל",
+    labelSubtask: "חוליה",
+    labelSigil: "סימן (תג)",
+    noSigil: "ללא סימן",
+    createSigil: "+ חרוט סימן",
+    newSigilName: "שם הסימן",
+    addSubtask: "+ הוסף חוליה",
+    placeholderTitle: "למשל: לכבוש את הפסגה (ללכת למכון)",
+    btnRefuse: "סרב",
+    btnCancel: "השאר",
+    btnDelete: "השמד",
+    btnForge: "חשול מחדש",
+    btnSeal: "חתום",
+    btnCreate: "צור",
+    btnUpdate: "עדכן",
+    
+    financeSource: "מקור / מטרה",
+    financeAmount: "סכום (זהב)",
+    financeDate: "זמן המעשה",
+    financeClose: "סגור",
+    financeSave: "רשום",
+    
+    // Rituals
+    streak: "רצף",
+    ritualDone: "הטקס בוצע",
+    ritualCooldown: "המתן למחזור חדש",
+    
+    demonDefault: "הכבשן ממתין לפקודותיך, אדון.",
+    deleteTransConfirm: "האם אתה בטוח שברצונך למחוק רשומה זו לצמיתות?",
+    deleteNoteConfirm: "לשרוף את המגילה הזו לנצח?",
+
+    // Critical Success
+    critSuccess: "ברכת התהום",
+    critDesc: "הכבשן שואג בהנאה! הצלחה קריטית!",
+    
+    // Settings
+    settingsTitle: "הגדרות הכבשן",
+    settingsVisual: "מראה העולם",
+    themeLight: "אור (אפר)",
+    themeDark: "חושך (אובסידיאן)",
+    langRu: "רוסית",
+    langEn: "אנגלית",
+    langHe: "עברית",
+
+    // Market/Altar Stubs
+    marketTitle: "",
+    marketDesc: "",
+    effectFire: "",
+    effectSoul: "",
+    effectVoid: "",
+    effectBlood: "",
+    effectGold: "",
+    cost: "",
+    buy: "",
+    equip: "",
+    equipped: "",
+    insufficientFunds: "",
+    modalAltarTitle: "",
+    labelTarget: "",
+    contribute: "",
+    altarFull: ""
   }
 };

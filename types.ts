@@ -1,4 +1,12 @@
 
+
+export interface User {
+  id: string;
+  email: string;
+  name?: string;
+  avatarUrl?: string;
+}
+
 export enum Difficulty {
   ASH = 'ASH',         // Easy
   EMBER = 'EMBER',     // Medium
@@ -67,16 +75,16 @@ export interface PlayerStats {
   soulsCollected: number;
   gold: number;
   unlockedEffects: ParticleEffectType[];
-  activeEffect: ParticleEffectType;
+  activeEffect?: ParticleEffectType;
 }
 
 export interface Altar {
   id: string;
   title: string;
-  targetAmount: number;
   currentAmount: number;
+  targetAmount: number;
 }
 
 export type AppView = 'active' | 'history' | 'finance' | 'analytics' | 'grimoire';
-export type Language = 'ru' | 'en';
+export type Language = 'ru' | 'en' | 'he';
 export type Theme = 'light' | 'dark';

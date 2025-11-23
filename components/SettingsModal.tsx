@@ -1,10 +1,9 @@
 
-
-import React, { useRef } from 'react';
-import { HellButton } from './HellButton';
+import React from 'react';
 import { translations, Language } from '../translations';
-import { Theme } from '../types';
-import { audioService } from '../services/audioService';
+import { Theme, User } from '../types';
+import { authService } from '../services/authService';
+import { HellButton } from './HellButton';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -13,25 +12,19 @@ interface SettingsModalProps {
   theme: Theme;
   onSetLang: (l: Language) => void;
   onSetTheme: (t: Theme) => void;
-  onExport: () => void;
-  onImport: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  user?: User | null;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ 
-  isOpen, onClose, lang, theme, onSetLang, onSetTheme, onExport, onImport 
+  isOpen, onClose, lang, theme, onSetLang, onSetTheme, user 
 }) => {
   const t = translations[lang];
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
 
-  const triggerImport = () => {
-      fileInputRef.current?.click();
-  };
-
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/95 p-4 backdrop-blur-sm">
-      <div className="bg-bg-panel border border-hell-gold w-full max-w-md shadow-[0_0_50px_rgba(251,191,36,0.15)] max-h-[90vh] overflow-y-auto">
+      <div className="bg-bg-panel border border-hell-gold w-full max-w-md shadow-[0_0_50px_rgba(251,191,36,0.15)]">
         
         {/* Header */}
         <div className="bg-hell-900 p-4 border-b border-hell-gold/30 flex justify-between items-center sticky top-0 z-10">
@@ -43,7 +36,24 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
         <div className="p-6 space-y-8">
             
-            {/* Section 1: Visuals */}
+            {/* Profile Settings */}
+            {user && (
+                <div>
+                    <h3 className="text-xs font-bold text-hell-500 uppercase tracking-widest mb-3 border-b border-hell-700/50 pb-1">
+                        {t.profile}
+                    </h3>
+                    <div className="flex flex-col gap-3">
+                        <div className="text-text-primary font-mono text-sm break-all">
+                            {user.email}
+                        </div>
+                        <HellButton variant="danger" onClick={() => authService.logout()} className="text-xs">
+                            {t.logout}
+                        </HellButton>
+                    </div>
+                </div>
+            )}
+
+            {/* Visuals Settings */}
             <div>
                 <h3 className="text-xs font-bold text-hell-500 uppercase tracking-widest mb-3 border-b border-hell-700/50 pb-1">
                     {t.settingsVisual}
@@ -65,6 +75,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                 className={`px-3 py-1 text-xs font-bold transition ${lang === 'en' ? 'bg-hell-gold text-black' : 'bg-transparent text-text-secondary hover:bg-hell-800'}`}
                             >
                                 EN
+                            </button>
+                            <button 
+                                onClick={() => onSetLang('he')}
+                                className={`px-3 py-1 text-xs font-bold transition ${lang === 'he' ? 'bg-hell-gold text-black' : 'bg-transparent text-text-secondary hover:bg-hell-800'}`}
+                            >
+                                HE
                             </button>
                         </div>
                     </div>
@@ -89,35 +105,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </div>
                 </div>
             </div>
-
-            {/* Section 2: Data (Soul Vessel) */}
-            <div>
-                <h3 className="text-xs font-bold text-hell-500 uppercase tracking-widest mb-3 border-b border-hell-700/50 pb-1">
-                    {t.settingsData}
-                </h3>
-                <p className="text-xs text-text-muted mb-4 italic font-serif">
-                    {t.backupDesc}
-                </p>
-                
-                <div className="grid gap-3">
-                    <HellButton onClick={onExport} variant="gold" className="w-full text-xs">
-                        💾 {t.btnExport}
-                    </HellButton>
-
-                    <input 
-                        type="file" 
-                        accept=".json" 
-                        ref={fileInputRef}
-                        onChange={onImport}
-                        className="hidden" 
-                    />
-                    
-                    <HellButton onClick={triggerImport} variant="secondary" className="w-full text-xs">
-                        ♻️ {t.btnImport}
-                    </HellButton>
-                </div>
-            </div>
-
         </div>
       </div>
     </div>

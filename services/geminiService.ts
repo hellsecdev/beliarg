@@ -22,11 +22,26 @@ const QUOTES_EN = [
     "The Abyss watches your ascent with interest."
 ];
 
+const QUOTES_HE = [
+    "רצונך הוא החוק שלי, אדון.",
+    "הכבשן בוער חזק יותר עם כל ניצחון.",
+    "הזהב זורם כנהר, והנשמות כאפר.",
+    "שום שרשרת לא תחזיק אותנו לנצח.",
+    "הפחד הוא דלק. שרוף אותו.",
+    "אויביך יהפכו למדרגות אל הכס.",
+    "עוד עסקה נחתמה בדם.",
+    "התהום צופה בעלייתך בעניין."
+];
+
 /**
  * Replaced dynamic AI generation with static quotes to remove API dependency.
  */
 export const getDemonComment = async (completedCount: number, currentGold: number, lang: Language): Promise<string> => {
-    const quotes = lang === 'ru' ? QUOTES_RU : QUOTES_EN;
+    let quotes;
+    if (lang === 'ru') quotes = QUOTES_RU;
+    else if (lang === 'he') quotes = QUOTES_HE;
+    else quotes = QUOTES_EN;
+
     const randomIndex = Math.floor(Math.random() * quotes.length);
     
     // Simulate a small delay to feel like "thinking"

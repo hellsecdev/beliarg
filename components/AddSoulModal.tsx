@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Task, Difficulty, Subtask, Sigil } from '../types';
 import { HellButton } from './HellButton';
@@ -258,9 +259,9 @@ export const AddSoulModal: React.FC<AddSoulModalProps> = ({ isOpen, onClose, onS
                 onChange={(e) => setDifficulty(e.target.value as Difficulty)}
                 className="w-full bg-bg-app text-text-primary border border-hell-700 p-2 text-sm focus:border-hell-lava outline-none h-[38px] sm:h-[42px]"
               >
-                <option value={Difficulty.ASH}>ASH (Easy)</option>
-                <option value={Difficulty.EMBER}>EMBER (Medium)</option>
-                <option value={Difficulty.INFERNO}>INFERNO (Hard)</option>
+                <option value={Difficulty.ASH}>{t.diffAsh}</option>
+                <option value={Difficulty.EMBER}>{t.diffEmber}</option>
+                <option value={Difficulty.INFERNO}>{t.diffInferno}</option>
               </select>
             </div>
           </div>
