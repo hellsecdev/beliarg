@@ -11,8 +11,14 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Beliarg" />
     
-    <!-- Manifest (Data URI for standalone environment) -->
-    <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiQmVsaWFyZzogVGhlIEV0ZXJuYWwgRm9yZ2UiLCJzaG9ydF9uYW1lIjoiQmVsaWFyZyIs" />
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    
+    <!-- Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    
+    <script type="module" src="/index.tsx"></script>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Added Google Fonts for Hellish Atmosphere + Hebrew Support (Rubik for readability) -->
@@ -269,12 +275,12 @@
           font-family: 'Rubik Distressed', cursive; 
       }
     </style>
-  <script type="importmap">
+<script type="importmap">
 {
   "imports": {
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0"
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
   }
 }
 </script>
