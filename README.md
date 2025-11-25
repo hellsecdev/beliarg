@@ -55,12 +55,22 @@ It features a unique "Hellish" aesthetic, turning daily tasks into "Chains", exp
 - **PWA:** Manifest & Service Worker ready
 
 ### Backend (The Engine)
-- **Runtime:** Node.js
+- **Runtime:** Node.js (v20+)
 - **Framework:** Express.js
-- **Database:** PostgreSQL
+- **Database:** PostgreSQL 16
 - **Auth:** `jsonwebtoken` (JWT) + `bcryptjs`
+- **Process Manager:** PM2
+- **Web Server:** Nginx (reverse proxy)
+- **SSL:** Let's Encrypt (Certbot)
 
 **Note:** The project has **Zero AI Dependencies**. All logic is deterministic.
+
+### Production Features
+- **Auto-reconnection:** Automatic PostgreSQL reconnection on connection loss
+- **Error Handling:** Comprehensive error logging and handling
+- **Data Persistence:** All data stored in PostgreSQL with user isolation
+- **HTTPS:** SSL/TLS encryption via Let's Encrypt
+- **PWA Ready:** Full Progressive Web App support with custom icons
 
 ---
 
@@ -68,19 +78,30 @@ It features a unique "Hellish" aesthetic, turning daily tasks into "Chains", exp
 
 ```text
 /
-├── public/                 # Static assets (Favicons, Manifest)
-├── src/                    # React Source Code
-│   ├── components/         # UI Components
-│   ├── services/           # API & Audio Services
-│   ├── App.tsx             # Main Controller
-│   └── translations.ts     # Localization
+├── public/                 # Static assets (Favicons, Manifest, Icons)
+│   ├── favicon.png         # Favicon (32x32)
+│   ├── apple-touch-icon.png # iOS icon (180x180)
+│   ├── icon-192.png        # PWA icon (192x192)
+│   ├── icon-512.png        # PWA icon (512x512)
+│   └── manifest.json       # PWA manifest
+├── components/             # React UI Components
+├── services/                # API & Audio Services
+│   ├── authService.ts      # Authentication service
+│   ├── storage.ts          # Data persistence service
+│   └── audioService.ts     # Audio effects
 ├── server/
-│   └── server.js           # Node.js Express Backend
+│   └── server.js           # Node.js Express Backend (ES modules)
 ├── sql/
 │   └── schema.sql          # PostgreSQL Database Schema
+├── nginx/
+│   └── beliarg.conf        # Nginx configuration template
 ├── index.html              # Entry point
+├── App.tsx                 # Main React Controller
+├── translations.ts         # Localization
+├── ecosystem.config.cjs    # PM2 configuration
+├── deploy.sh               # Deployment automation script
 ├── package.json            # Dependencies & Scripts
-└── vite.config.ts          # Build Configuration
+└── vite.config.ts         # Build Configuration
 ```
 
 ---
@@ -145,20 +166,40 @@ To run as a single monolith (Server serving the Frontend):
 
 ---
 
-## ☁️ Deployment Guide (DigitalOcean Droplet)
+## ☁️ Deployment Guide
 
-1.  **Provision:** Get an Ubuntu server.
-2.  **Install:** `sudo apt install postgresql nodejs npm nginx`.
+### Production Deployment
+
+The application is deployed at **https://beliarg.online**
+
+For detailed deployment instructions, see [DEPLOYMENT.md](./DEPLOYMENT.md)
+
+### Quick Deployment Steps
+
+1.  **Provision:** Get an Ubuntu server (tested on Ubuntu 24.04).
+2.  **Install:** `sudo apt install postgresql nodejs npm nginx certbot`.
 3.  **Database:** Create the DB and user, run `sql/schema.sql`.
 4.  **Deploy Code:** Upload project files to `/var/www/beliarg`.
 5.  **Build:** Run `npm install` and `npm run build`.
 6.  **Run:** Use `pm2` to keep the server running:
     ```bash
     npm install -g pm2
-    pm2 start server/server.js --name beliarg
+    pm2 start ecosystem.config.cjs
+    pm2 save
+    pm2 startup
     ```
-7.  **Expose:** Configure NGINX to proxy port 80 to localhost:3000.
-8.  **Secure:** Use Certbot to enable HTTPS.
+7.  **Expose:** Configure NGINX to proxy port 80/443 to localhost:3000 (see `nginx/beliarg.conf`).
+8.  **Secure:** Use Certbot to enable HTTPS:
+    ```bash
+    sudo certbot --nginx -d beliarg.online -d www.beliarg.online
+    ```
+
+### Deployment Files
+
+- `ecosystem.config.cjs` - PM2 configuration
+- `nginx/beliarg.conf` - Nginx configuration template
+- `deploy.sh` - Automated deployment script
+- `DEPLOYMENT.md` - Detailed deployment guide
 
 ---
 
