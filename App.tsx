@@ -47,6 +47,8 @@ const App: React.FC = () => {
   const [finFilterType, setFinFilterType] = useState<TransactionType | 'ALL'>('ALL');
   const [finSort, setFinSort] = useState<'DATE_DESC' | 'AMT_DESC' | 'AMT_ASC'>('DATE_DESC');
   const [financePage, setFinancePage] = useState(1);
+  const [grimoirePage, setGrimoirePage] = useState(1);
+  const [historyPage, setHistoryPage] = useState(1);
 
   // Settings State
   const [lang, setLang] = useState<Language>('ru');
@@ -160,6 +162,12 @@ const App: React.FC = () => {
   useEffect(() => {
     setFinancePage(1);
   }, [finFilterType, finSort, searchQuery]);
+
+  // Reset grimoire and history pages when search changes
+  useEffect(() => {
+    setGrimoirePage(1);
+    setHistoryPage(1);
+  }, [searchQuery]);
 
   useEffect(() => {
     localStorage.setItem('beliarg_theme', theme);
@@ -402,6 +410,16 @@ const App: React.FC = () => {
   }, [tasks, taskFilterDiff, taskSort, searchQuery, sigils]);
 
   const historyTasks = tasks.filter(t => t.isCompleted).filter(t => matchesSearch(t.title + ' ' + t.description, t.sigilId)).sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
+  
+  // Pagination for history tasks
+  const ITEMS_PER_PAGE = 20;
+  const totalHistoryPages = Math.ceil(historyTasks.length / ITEMS_PER_PAGE);
+  const paginatedHistoryTasks = useMemo(() => {
+    const startIndex = (historyPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    return historyTasks.slice(startIndex, endIndex);
+  }, [historyTasks, historyPage]);
+  
   const filteredTransactions = transactions.filter(tr => finFilterType === 'ALL' || tr.type === finFilterType).filter(tr => matchesSearch(tr.title, tr.sigilId)).sort((a, b) => {
         if (finSort === 'AMT_DESC') return b.amount - a.amount;
         if (finSort === 'AMT_ASC') return a.amount - b.amount;
@@ -409,7 +427,6 @@ const App: React.FC = () => {
     });
 
   // Pagination for transactions
-  const ITEMS_PER_PAGE = 20;
   const totalPages = Math.ceil(filteredTransactions.length / ITEMS_PER_PAGE);
   const paginatedTransactions = useMemo(() => {
     const startIndex = (financePage - 1) * ITEMS_PER_PAGE;
@@ -418,6 +435,15 @@ const App: React.FC = () => {
   }, [filteredTransactions, financePage]);
 
   const filteredNotes = notes.filter(n => matchesSearch(n.title + ' ' + n.content, n.sigilId)).sort((a, b) => b.updatedAt - a.updatedAt);
+  
+  // Pagination for notes
+  const totalNotesPages = Math.ceil(filteredNotes.length / ITEMS_PER_PAGE);
+  const paginatedNotes = useMemo(() => {
+    const startIndex = (grimoirePage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    return filteredNotes.slice(startIndex, endIndex);
+  }, [filteredNotes, grimoirePage]);
+  
   const getNavClass = (viewName: AppView) => {
       const isActive = view === viewName;
       return `flex-1 py-2 font-cinzel uppercase text-[9px] sm:text-[10px] tracking-widest transition-all duration-300 ${isActive ? 'text-hell-gold bg-hell-800/50 border-b-2 border-hell-gold shadow-[0_0_15px_rgba(251,191,36,0.1)]' : 'text-text-secondary hover:text-text-primary'}`;
@@ -563,7 +589,38 @@ const App: React.FC = () => {
                         <p className="text-text-secondary text-xs mt-2 uppercase tracking-widest font-serif">{t.emptyStateDesc}</p>
                     </div>
                 ) : (
-                    <div className="opacity-80 grayscale-[50%] pointer-events-none select-none grid gap-3">{historyTasks.map(task => (<TaskCard key={task.id} task={task} sigil={getSigil(task.sigilId)} onComplete={()=>{}} onDelete={()=>{}} onEdit={()=>{}} isHistoryView={true} lang={lang} />))}</div>
+                    <>
+                        <div className="opacity-80 grayscale-[50%] pointer-events-none select-none grid gap-3">{paginatedHistoryTasks.map(task => (<TaskCard key={task.id} task={task} sigil={getSigil(task.sigilId)} onComplete={()=>{}} onDelete={()=>{}} onEdit={()=>{}} isHistoryView={true} lang={lang} />))}</div>
+                        {totalHistoryPages > 1 && (
+                            <div className="flex justify-center items-center gap-3 mt-4 mb-6">
+                                <button
+                                    onClick={() => setHistoryPage(prev => Math.max(1, prev - 1))}
+                                    disabled={historyPage === 1}
+                                    className={`px-3 py-1 text-xs border border-hell-700 font-cinzel uppercase transition ${
+                                        historyPage === 1
+                                            ? 'opacity-30 cursor-not-allowed text-text-muted'
+                                            : 'text-hell-gold hover:bg-hell-800 hover:border-hell-gold'
+                                    }`}
+                                >
+                                    ← {t.previous}
+                                </button>
+                                <span className="text-text-secondary text-xs font-cinzel uppercase">
+                                    {t.page} {historyPage} {t.of} {totalHistoryPages}
+                                </span>
+                                <button
+                                    onClick={() => setHistoryPage(prev => Math.min(totalHistoryPages, prev + 1))}
+                                    disabled={historyPage === totalHistoryPages}
+                                    className={`px-3 py-1 text-xs border border-hell-700 font-cinzel uppercase transition ${
+                                        historyPage === totalHistoryPages
+                                            ? 'opacity-30 cursor-not-allowed text-text-muted'
+                                            : 'text-hell-gold hover:bg-hell-800 hover:border-hell-gold'
+                                    }`}
+                                >
+                                    {t.next} →
+                                </button>
+                            </div>
+                        )}
+                    </>
                 )}
              </>
         )}
@@ -615,7 +672,40 @@ const App: React.FC = () => {
         {view === 'grimoire' && (
             <>
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4"><h2 className="text-xl text-hell-gold font-cinzel">{t.grimoireHeader}</h2><HellButton variant="gold" onClick={() => { setEditingNote(null); setIsGrimoireModalOpen(true); }} className="text-xs">{t.newScroll}</HellButton></div>
-                {filteredNotes.length === 0 ? (<div className="text-center py-12 border border-hell-700/50 bg-bg-panel/30"><div className="text-4xl mb-2 opacity-50">📜</div><p className="text-text-secondary font-serif italic text-sm">{t.emptyGrimoire}</p></div>) : (<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">{filteredNotes.map(note => (<GrimoireCard key={note.id} note={note} sigil={getSigil(note.sigilId)} onEdit={(n) => { setEditingNote(n); setIsGrimoireModalOpen(true); }} onDelete={(id) => requestDeleteItem(id, 'note')} lang={lang} />))}</div>)}
+                {filteredNotes.length === 0 ? (<div className="text-center py-12 border border-hell-700/50 bg-bg-panel/30"><div className="text-4xl mb-2 opacity-50">📜</div><p className="text-text-secondary font-serif italic text-sm">{t.emptyGrimoire}</p></div>) : (
+                    <>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">{paginatedNotes.map(note => (<GrimoireCard key={note.id} note={note} sigil={getSigil(note.sigilId)} onEdit={(n) => { setEditingNote(n); setIsGrimoireModalOpen(true); }} onDelete={(id) => requestDeleteItem(id, 'note')} lang={lang} />))}</div>
+                        {totalNotesPages > 1 && (
+                            <div className="flex justify-center items-center gap-3 mt-4 mb-6">
+                                <button
+                                    onClick={() => setGrimoirePage(prev => Math.max(1, prev - 1))}
+                                    disabled={grimoirePage === 1}
+                                    className={`px-3 py-1 text-xs border border-hell-700 font-cinzel uppercase transition ${
+                                        grimoirePage === 1
+                                            ? 'opacity-30 cursor-not-allowed text-text-muted'
+                                            : 'text-hell-gold hover:bg-hell-800 hover:border-hell-gold'
+                                    }`}
+                                >
+                                    ← {t.previous}
+                                </button>
+                                <span className="text-text-secondary text-xs font-cinzel uppercase">
+                                    {t.page} {grimoirePage} {t.of} {totalNotesPages}
+                                </span>
+                                <button
+                                    onClick={() => setGrimoirePage(prev => Math.min(totalNotesPages, prev + 1))}
+                                    disabled={grimoirePage === totalNotesPages}
+                                    className={`px-3 py-1 text-xs border border-hell-700 font-cinzel uppercase transition ${
+                                        grimoirePage === totalNotesPages
+                                            ? 'opacity-30 cursor-not-allowed text-text-muted'
+                                            : 'text-hell-gold hover:bg-hell-800 hover:border-hell-gold'
+                                    }`}
+                                >
+                                    {t.next} →
+                                </button>
+                            </div>
+                        )}
+                    </>
+                )}
             </>
         )}
           </>
