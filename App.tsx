@@ -412,7 +412,7 @@ const App: React.FC = () => {
   const historyTasks = tasks.filter(t => t.isCompleted).filter(t => matchesSearch(t.title + ' ' + t.description, t.sigilId)).sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
   
   // Pagination for history tasks
-  const ITEMS_PER_PAGE = 20;
+  const ITEMS_PER_PAGE = 10;
   const totalHistoryPages = Math.ceil(historyTasks.length / ITEMS_PER_PAGE);
   const paginatedHistoryTasks = useMemo(() => {
     const startIndex = (historyPage - 1) * ITEMS_PER_PAGE;
