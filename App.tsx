@@ -557,7 +557,14 @@ const App: React.FC = () => {
         {view === 'history' && (
              <>
                 <div className="flex justify-between items-center mb-6"><h2 className="text-xl text-hell-gold font-cinzel">{t.historyHeader}</h2></div>
-                <div className="opacity-80 grayscale-[50%] pointer-events-none select-none grid gap-3">{historyTasks.map(task => (<TaskCard key={task.id} task={task} sigil={getSigil(task.sigilId)} onComplete={()=>{}} onDelete={()=>{}} onEdit={()=>{}} isHistoryView={true} lang={lang} />))}</div>
+                {historyTasks.length === 0 ? (
+                    <div className="text-center py-12">
+                        <p className="text-hell-500 font-cinzel text-lg animate-pulse tracking-widest">{t.emptyStateTitle}</p>
+                        <p className="text-text-secondary text-xs mt-2 uppercase tracking-widest font-serif">{t.emptyStateDesc}</p>
+                    </div>
+                ) : (
+                    <div className="opacity-80 grayscale-[50%] pointer-events-none select-none grid gap-3">{historyTasks.map(task => (<TaskCard key={task.id} task={task} sigil={getSigil(task.sigilId)} onComplete={()=>{}} onDelete={()=>{}} onEdit={()=>{}} isHistoryView={true} lang={lang} />))}</div>
+                )}
              </>
         )}
         {view === 'finance' && (

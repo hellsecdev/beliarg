@@ -184,6 +184,9 @@ app.get('/api/sync', authenticateToken, async (req, res) => {
       // Convert is_completed boolean (PostgreSQL returns true/false or 't'/'f')
       const isCompleted = task.is_completed === true || task.is_completed === 't' || task.is_completed === 1 || task.is_completed === 'true';
       
+      // Convert completed_at timestamp to milliseconds
+      const completedAt = task.completed_at ? new Date(task.completed_at).getTime() : undefined;
+      
       return {
         id: task.id,
         title: task.title,
@@ -193,7 +196,7 @@ app.get('/api/sync', authenticateToken, async (req, res) => {
         difficulty: task.difficulty,
         isCompleted,
         createdAt,
-        completedAt: undefined, // Not stored in DB, will be set by frontend when task is completed
+        completedAt,
         sigilId: task.sigil_id || undefined,
         subtasks: subtasksRes.rows
           .filter(st => st.task_id === task.id)
@@ -300,25 +303,27 @@ const toTimestamp = (value) => {
 
 // 2. TASKS
 app.post('/api/tasks', authenticateToken, async (req, res) => {
-  const { id, title, description, originalDescription, deadline, difficulty, isCompleted, createdAt, sigilId, subtasks } = req.body;
+  const { id, title, description, originalDescription, deadline, difficulty, isCompleted, createdAt, completedAt, sigilId, subtasks } = req.body;
   const userId = req.user.id;
   
   try {
     await ensureConnection();
     const createdAtTimestamp = toTimestamp(createdAt);
     const deadlineTimestamp = deadline ? toTimestamp(deadline) : null;
+    const completedAtTimestamp = completedAt ? toTimestamp(completedAt) : null;
     
     await client.query(`
-      INSERT INTO tasks (id, user_id, title, description, original_description, deadline, difficulty, is_completed, created_at, sigil_id)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      INSERT INTO tasks (id, user_id, title, description, original_description, deadline, difficulty, is_completed, created_at, completed_at, sigil_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       ON CONFLICT (id) DO UPDATE SET
         title = EXCLUDED.title,
         description = EXCLUDED.description,
         deadline = EXCLUDED.deadline,
         difficulty = EXCLUDED.difficulty,
         is_completed = EXCLUDED.is_completed,
+        completed_at = EXCLUDED.completed_at,
         sigil_id = EXCLUDED.sigil_id
-    `, [id, userId, title, description, originalDescription, deadlineTimestamp, difficulty, isCompleted, createdAtTimestamp, sigilId]);
+    `, [id, userId, title, description, originalDescription, deadlineTimestamp, difficulty, isCompleted, createdAtTimestamp, completedAtTimestamp, sigilId]);
 
     await client.query('DELETE FROM subtasks WHERE task_id = $1', [id]);
     if (subtasks && subtasks.length > 0) {
