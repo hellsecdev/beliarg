@@ -411,6 +411,9 @@ const App: React.FC = () => {
 
   const historyTasks = tasks.filter(t => t.isCompleted).filter(t => matchesSearch(t.title + ' ' + t.description, t.sigilId)).sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
   
+  // All completed tasks for analytics (without search filter)
+  const allCompletedTasks = tasks.filter(t => t.isCompleted).sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
+  
   // Pagination for history tasks
   const ITEMS_PER_PAGE = 10;
   const totalHistoryPages = Math.ceil(historyTasks.length / ITEMS_PER_PAGE);
@@ -668,7 +671,7 @@ const App: React.FC = () => {
                 )}
             </>
         )}
-        {view === 'analytics' && (<AnalyticsView transactions={transactions} completedTasks={historyTasks} lang={lang} />)}
+        {view === 'analytics' && (<AnalyticsView transactions={transactions} completedTasks={allCompletedTasks} lang={lang} />)}
         {view === 'grimoire' && (
             <>
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4"><h2 className="text-xl text-hell-gold font-cinzel">{t.grimoireHeader}</h2><HellButton variant="gold" onClick={() => { setEditingNote(null); setIsGrimoireModalOpen(true); }} className="text-xs">{t.newScroll}</HellButton></div>
