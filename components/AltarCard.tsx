@@ -38,7 +38,7 @@ export const AltarCard: React.FC<AltarCardProps> = ({ altar, onContribute, curre
             <div className="flex justify-between items-start mb-2">
                 <h4 className="font-cinzel text-hell-gold text-lg">{altar.title}</h4>
                 <span className="font-mono text-xs text-text-muted">
-                    {altar.currentAmount.toFixed(0)} / {altar.targetAmount.toFixed(0)}
+                    {(typeof altar.currentAmount === 'number' ? altar.currentAmount : 0).toFixed(0)} / {(typeof altar.targetAmount === 'number' ? altar.targetAmount : 0).toFixed(0)}
                 </span>
             </div>
             

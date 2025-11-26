@@ -5,6 +5,14 @@ import { authService } from './authService';
 const USE_BACKEND = true; 
 const API_URL = '/api';
 
+// Custom error class for authentication errors
+export class AuthenticationError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = 'AuthenticationError';
+    }
+}
+
 const getHeaders = () => {
     const token = authService.getToken();
     return {
@@ -13,18 +21,36 @@ const getHeaders = () => {
     };
 };
 
+// Helper function to handle API responses and check for auth errors
+const handleResponse = async (res: Response): Promise<any> => {
+    if (res.status === 401 || res.status === 403) {
+        // Clear token on authentication error
+        authService.clearToken();
+        throw new AuthenticationError('Authentication failed. Please login again.');
+    }
+    if (!res.ok) {
+        const error = await res.json().catch(() => ({ error: 'Server error' }));
+        throw new Error(error.error || 'Server error');
+    }
+    return await res.json();
+};
+
 export const storageService = {
     async loadAllData() {
         if (USE_BACKEND) {
             try {
                 const token = authService.getToken();
-                if (!token) throw new Error("No token");
+                if (!token) throw new AuthenticationError("No token");
 
                 const res = await fetch(`${API_URL}/sync`, { headers: getHeaders() });
-                if (!res.ok) throw new Error('Server error');
-                return await res.json();
+                return await handleResponse(res);
             } catch (e) {
                 console.error("Sync failed", e);
+                // Re-throw authentication errors so they can be handled by the app
+                if (e instanceof AuthenticationError) {
+                    throw e;
+                }
+                // For other errors, return empty data
                 return { tasks: [], transactions: [], rituals: [], notes: [], sigils: [] };
             }
         }
@@ -49,11 +75,7 @@ export const storageService = {
                     headers: getHeaders(),
                     body: JSON.stringify(task)
                 });
-                if (!res.ok) {
-                    const error = await res.json().catch(() => ({ error: 'Failed to save task' }));
-                    console.error('Failed to save task:', error);
-                    throw new Error(error.error || 'Failed to save task');
-                }
+                await handleResponse(res);
             } catch (e) {
                 console.error('Error saving task:', e);
                 throw e;
@@ -68,11 +90,7 @@ export const storageService = {
                     method: 'DELETE',
                     headers: getHeaders()
                 });
-                if (!res.ok) {
-                    const error = await res.json().catch(() => ({ error: 'Failed to delete task' }));
-                    console.error('Failed to delete task:', error);
-                    throw new Error(error.error || 'Failed to delete task');
-                }
+                await handleResponse(res);
             } catch (e) {
                 console.error('Error deleting task:', e);
                 throw e;
@@ -88,11 +106,7 @@ export const storageService = {
                     headers: getHeaders(),
                     body: JSON.stringify(trans)
                 });
-                if (!res.ok) {
-                    const error = await res.json().catch(() => ({ error: 'Failed to save transaction' }));
-                    console.error('Failed to save transaction:', error);
-                    throw new Error(error.error || 'Failed to save transaction');
-                }
+                await handleResponse(res);
             } catch (e) {
                 console.error('Error saving transaction:', e);
                 throw e;
@@ -107,11 +121,7 @@ export const storageService = {
                     method: 'DELETE',
                     headers: getHeaders() 
                 });
-                if (!res.ok) {
-                    const error = await res.json().catch(() => ({ error: 'Failed to delete transaction' }));
-                    console.error('Failed to delete transaction:', error);
-                    throw new Error(error.error || 'Failed to delete transaction');
-                }
+                await handleResponse(res);
             } catch (e) {
                 console.error('Error deleting transaction:', e);
                 throw e;
@@ -127,11 +137,7 @@ export const storageService = {
                     headers: getHeaders(),
                     body: JSON.stringify(note)
                 });
-                if (!res.ok) {
-                    const error = await res.json().catch(() => ({ error: 'Failed to save note' }));
-                    console.error('Failed to save note:', error);
-                    throw new Error(error.error || 'Failed to save note');
-                }
+                await handleResponse(res);
             } catch (e) {
                 console.error('Error saving note:', e);
                 throw e;
@@ -146,11 +152,7 @@ export const storageService = {
                     method: 'DELETE',
                     headers: getHeaders()
                 });
-                if (!res.ok) {
-                    const error = await res.json().catch(() => ({ error: 'Failed to delete note' }));
-                    console.error('Failed to delete note:', error);
-                    throw new Error(error.error || 'Failed to delete note');
-                }
+                await handleResponse(res);
             } catch (e) {
                 console.error('Error deleting note:', e);
                 throw e;
@@ -166,11 +168,7 @@ export const storageService = {
                     headers: getHeaders(),
                     body: JSON.stringify(ritual)
                 });
-                if (!res.ok) {
-                    const error = await res.json().catch(() => ({ error: 'Failed to save ritual' }));
-                    console.error('Failed to save ritual:', error);
-                    throw new Error(error.error || 'Failed to save ritual');
-                }
+                await handleResponse(res);
             } catch (e) {
                 console.error('Error saving ritual:', e);
                 throw e;
@@ -186,11 +184,7 @@ export const storageService = {
                     headers: getHeaders(),
                     body: JSON.stringify(sigil)
                 });
-                if (!res.ok) {
-                    const error = await res.json().catch(() => ({ error: 'Failed to save sigil' }));
-                    console.error('Failed to save sigil:', error);
-                    throw new Error(error.error || 'Failed to save sigil');
-                }
+                await handleResponse(res);
             } catch (e) {
                 console.error('Error saving sigil:', e);
                 throw e;

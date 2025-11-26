@@ -167,17 +167,89 @@ app.get('/api/sync', authenticateToken, async (req, res) => {
     const ritualsRes = await client.query('SELECT * FROM rituals WHERE user_id = $1', [userId]);
     const sigilsRes = await client.query('SELECT * FROM sigils WHERE user_id = $1', [userId]);
 
-    const tasks = tasksRes.rows.map(task => ({
-      ...task,
-      subtasks: subtasksRes.rows.filter(st => st.task_id === task.id)
+    // Convert task fields from snake_case to camelCase and convert timestamps
+    const tasks = tasksRes.rows.map(task => {
+      // Convert timestamps to milliseconds
+      const createdAt = task.created_at ? new Date(task.created_at).getTime() : Date.now();
+      // Deadline is TIMESTAMP, convert to ISO string (YYYY-MM-DD format for date input)
+      let deadline = '';
+      if (task.deadline) {
+        if (typeof task.deadline === 'string') {
+          deadline = task.deadline;
+        } else {
+          deadline = new Date(task.deadline).toISOString().split('T')[0];
+        }
+      }
+      
+      // Convert is_completed boolean (PostgreSQL returns true/false or 't'/'f')
+      const isCompleted = task.is_completed === true || task.is_completed === 't' || task.is_completed === 1 || task.is_completed === 'true';
+      
+      return {
+        id: task.id,
+        title: task.title,
+        description: task.description,
+        originalDescription: task.original_description || undefined,
+        deadline,
+        difficulty: task.difficulty,
+        isCompleted,
+        createdAt,
+        completedAt: undefined, // Not stored in DB, will be set by frontend when task is completed
+        sigilId: task.sigil_id || undefined,
+        subtasks: subtasksRes.rows
+          .filter(st => st.task_id === task.id)
+          .map(st => ({
+            id: st.id,
+            title: st.title,
+            isCompleted: st.is_completed === true || st.is_completed === 't' || st.is_completed === 1 || st.is_completed === 'true'
+          }))
+      };
+    });
+
+    // Convert numeric fields to numbers (PostgreSQL returns numeric as strings)
+    const transactions = transRes.rows.map(tr => ({
+      ...tr,
+      amount: typeof tr.amount === 'string' ? parseFloat(tr.amount) : (typeof tr.amount === 'number' ? tr.amount : 0)
+    }));
+
+    // Convert notes fields from snake_case to camelCase
+    const notes = notesRes.rows.map(note => {
+      const createdAt = note.created_at ? new Date(note.created_at).getTime() : Date.now();
+      const updatedAt = note.updated_at ? new Date(note.updated_at).getTime() : Date.now();
+      return {
+        id: note.id,
+        title: note.title,
+        content: note.content,
+        createdAt,
+        updatedAt,
+        sigilId: note.sigil_id || undefined
+      };
+    });
+
+    // Convert rituals fields from snake_case to camelCase
+    const rituals = ritualsRes.rows.map(ritual => {
+      // last_performed is DATE type, convert to timestamp (start of day)
+      const lastPerformed = ritual.last_performed ? new Date(ritual.last_performed).getTime() : 0;
+      return {
+        id: ritual.id,
+        title: ritual.title,
+        streak: ritual.streak || 0,
+        lastPerformed
+      };
+    });
+
+    // Sigils should be fine as-is (id, title, color), but ensure consistency
+    const sigils = sigilsRes.rows.map(sigil => ({
+      id: sigil.id,
+      title: sigil.title,
+      color: sigil.color
     }));
 
     res.json({
       tasks,
-      transactions: transRes.rows,
-      notes: notesRes.rows,
-      rituals: ritualsRes.rows,
-      sigils: sigilsRes.rows
+      transactions,
+      notes,
+      rituals,
+      sigils
     });
   } catch (err) {
     console.error('Sync error:', err.message);
@@ -187,6 +259,45 @@ app.get('/api/sync', authenticateToken, async (req, res) => {
   }
 });
 
+// Helper function to convert timestamp to PostgreSQL TIMESTAMP
+const toTimestamp = (value) => {
+  // Handle null, undefined, empty string, or 0
+  if (value === null || value === undefined || value === '' || value === 0) {
+    return null;
+  }
+  // If it's a number (timestamp in milliseconds), convert to Date then to ISO string
+  if (typeof value === 'number') {
+    // Check if it's a valid timestamp (not 0, not NaN, and reasonable date range)
+    if (isNaN(value) || value <= 0) {
+      return null;
+    }
+    const date = new Date(value);
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return null;
+    }
+    return date.toISOString();
+  }
+  // If it's already a string, try to parse it
+  if (typeof value === 'string') {
+    // Check if it's a timestamp number as string
+    if (/^\d+$/.test(value)) {
+      const numValue = parseInt(value);
+      if (numValue <= 0 || isNaN(numValue)) {
+        return null;
+      }
+      const date = new Date(numValue);
+      if (isNaN(date.getTime())) {
+        return null;
+      }
+      return date.toISOString();
+    }
+    // Otherwise assume it's already in ISO format
+    return value;
+  }
+  return value;
+};
+
 // 2. TASKS
 app.post('/api/tasks', authenticateToken, async (req, res) => {
   const { id, title, description, originalDescription, deadline, difficulty, isCompleted, createdAt, sigilId, subtasks } = req.body;
@@ -194,6 +305,9 @@ app.post('/api/tasks', authenticateToken, async (req, res) => {
   
   try {
     await ensureConnection();
+    const createdAtTimestamp = toTimestamp(createdAt);
+    const deadlineTimestamp = deadline ? toTimestamp(deadline) : null;
+    
     await client.query(`
       INSERT INTO tasks (id, user_id, title, description, original_description, deadline, difficulty, is_completed, created_at, sigil_id)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
@@ -204,7 +318,7 @@ app.post('/api/tasks', authenticateToken, async (req, res) => {
         difficulty = EXCLUDED.difficulty,
         is_completed = EXCLUDED.is_completed,
         sigil_id = EXCLUDED.sigil_id
-    `, [id, userId, title, description, originalDescription, deadline, difficulty, isCompleted, createdAt, sigilId]);
+    `, [id, userId, title, description, originalDescription, deadlineTimestamp, difficulty, isCompleted, createdAtTimestamp, sigilId]);
 
     await client.query('DELETE FROM subtasks WHERE task_id = $1', [id]);
     if (subtasks && subtasks.length > 0) {
@@ -244,6 +358,58 @@ app.post('/api/transactions', authenticateToken, async (req, res) => {
     const { id, title, amount, type, date, sigilId } = req.body;
     try {
         await ensureConnection();
+        
+        // Validate and sanitize amount
+        let amountValue = null;
+        if (amount !== null && amount !== undefined) {
+            const numAmount = typeof amount === 'string' ? parseFloat(amount) : Number(amount);
+            if (!isNaN(numAmount) && isFinite(numAmount)) {
+                // Limit to reasonable range to prevent overflow (max 9999999999999999.99 for numeric(20,2))
+                if (numAmount > 9999999999999999.99) {
+                    return res.status(400).json({ error: 'Amount too large. Maximum is 9,999,999,999,999,999.99' });
+                }
+                if (numAmount < -9999999999999999.99) {
+                    return res.status(400).json({ error: 'Amount too small. Minimum is -9,999,999,999,999,999.99' });
+                }
+                amountValue = numAmount;
+            } else {
+                return res.status(400).json({ error: 'Invalid amount value' });
+            }
+        }
+        
+        // Convert date to proper format (date field is DATE type, not TIMESTAMP)
+        let dateValue = null;
+        if (date && date !== 0 && date !== '0') {
+            if (typeof date === 'number') {
+                if (!isNaN(date) && date > 0) {
+                    const dateObj = new Date(date);
+                    if (!isNaN(dateObj.getTime())) {
+                        dateValue = dateObj.toISOString().split('T')[0]; // Extract YYYY-MM-DD
+                    }
+                }
+            } else if (typeof date === 'string') {
+                if (/^\d+$/.test(date)) {
+                    // Timestamp as string
+                    const numValue = parseInt(date);
+                    if (numValue > 0 && !isNaN(numValue)) {
+                        const dateObj = new Date(numValue);
+                        if (!isNaN(dateObj.getTime())) {
+                            dateValue = dateObj.toISOString().split('T')[0];
+                        }
+                    }
+                } else {
+                    // Already a date string, try to parse and format
+                    const dateObj = new Date(date);
+                    if (!isNaN(dateObj.getTime())) {
+                        dateValue = dateObj.toISOString().split('T')[0];
+                    } else {
+                        // Assume it's already in YYYY-MM-DD format
+                        dateValue = date;
+                    }
+                }
+            }
+        }
+        
         await client.query(`
             INSERT INTO transactions (id, user_id, title, amount, type, date, sigil_id)
             VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -253,7 +419,7 @@ app.post('/api/transactions', authenticateToken, async (req, res) => {
                 type = EXCLUDED.type,
                 date = EXCLUDED.date,
                 sigil_id = EXCLUDED.sigil_id
-        `, [id, req.user.id, title, amount, type, date, sigilId]);
+        `, [id, req.user.id, title, amountValue, type, dateValue, sigilId]);
         res.json({ success: true });
     } catch (err) {
         console.error('Save transaction error:', err.message);
@@ -299,13 +465,45 @@ app.post('/api/rituals', authenticateToken, async (req, res) => {
     const { id, title, streak, lastPerformed } = req.body;
     try {
         await ensureConnection();
+        // Convert lastPerformed to DATE format (YYYY-MM-DD)
+        let lastPerformedDate = null;
+        if (lastPerformed && lastPerformed !== 0 && lastPerformed !== '0') {
+            if (typeof lastPerformed === 'number') {
+                if (!isNaN(lastPerformed) && lastPerformed > 0) {
+                    const dateObj = new Date(lastPerformed);
+                    if (!isNaN(dateObj.getTime())) {
+                        lastPerformedDate = dateObj.toISOString().split('T')[0];
+                    }
+                }
+            } else if (typeof lastPerformed === 'string') {
+                if (/^\d+$/.test(lastPerformed)) {
+                    const numValue = parseInt(lastPerformed);
+                    if (numValue > 0 && !isNaN(numValue)) {
+                        const dateObj = new Date(numValue);
+                        if (!isNaN(dateObj.getTime())) {
+                            lastPerformedDate = dateObj.toISOString().split('T')[0];
+                        }
+                    }
+                } else {
+                    // Try to parse as date string
+                    const dateObj = new Date(lastPerformed);
+                    if (!isNaN(dateObj.getTime())) {
+                        lastPerformedDate = dateObj.toISOString().split('T')[0];
+                    } else {
+                        // Assume it's already in YYYY-MM-DD format
+                        lastPerformedDate = lastPerformed;
+                    }
+                }
+            }
+        }
+        
         await client.query(`
             INSERT INTO rituals (id, user_id, title, streak, last_performed)
             VALUES ($1, $2, $3, $4, $5)
             ON CONFLICT (id) DO UPDATE SET
                 streak = EXCLUDED.streak,
                 last_performed = EXCLUDED.last_performed
-        `, [id, req.user.id, title, streak, lastPerformed]);
+        `, [id, req.user.id, title, streak, lastPerformedDate]);
         res.json({ success: true });
     } catch (err) {
         console.error('Save ritual error:', err.message);
@@ -320,6 +518,18 @@ app.post('/api/notes', authenticateToken, async (req, res) => {
     const { id, title, content, createdAt, updatedAt, sigilId } = req.body;
     try {
         await ensureConnection();
+        
+        // Validate content length (max 300 characters)
+        if (content && content.length > 300) {
+            return res.status(400).json({ error: 'Content cannot exceed 300 characters' });
+        }
+        
+        const createdAtTimestamp = toTimestamp(createdAt);
+        const updatedAtTimestamp = toTimestamp(updatedAt);
+        
+        // Ensure content is truncated to 300 characters
+        const truncatedContent = content ? content.substring(0, 300) : content;
+        
         await client.query(`
             INSERT INTO notes (id, user_id, title, content, created_at, updated_at, sigil_id)
             VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -328,7 +538,7 @@ app.post('/api/notes', authenticateToken, async (req, res) => {
                 content = EXCLUDED.content,
                 updated_at = EXCLUDED.updated_at,
                 sigil_id = EXCLUDED.sigil_id
-        `, [id, req.user.id, title, content, createdAt, updatedAt, sigilId]);
+        `, [id, req.user.id, title, truncatedContent, createdAtTimestamp, updatedAtTimestamp, sigilId]);
         res.json({ success: true });
     } catch (err) {
         console.error('Save note error:', err.message);

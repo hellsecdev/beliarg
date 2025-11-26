@@ -17,7 +17,7 @@ import { SettingsModal } from './components/SettingsModal';
 import { AuthPage } from './components/AuthPage'; // NEW
 import { getDemonComment } from './services/geminiService';
 import { audioService } from './services/audioService';
-import { storageService } from './services/storage'; 
+import { storageService, AuthenticationError } from './services/storage'; 
 import { authService } from './services/authService';
 import { translations } from './translations';
 
@@ -81,14 +81,30 @@ const App: React.FC = () => {
           // For now, assume if token exists we try to load data. 
           // Ideally we decode JWT to get email for UI.
           try {
+              // Validate JWT format (should have 3 parts separated by dots)
+              if (!token || typeof token !== 'string' || token.split('.').length !== 3) {
+                  throw new Error('Invalid token format');
+              }
               const base64Url = token.split('.')[1];
+              if (!base64Url) {
+                  throw new Error('Token missing payload');
+              }
               const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
               const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
               const decoded = JSON.parse(jsonPayload);
+              if (!decoded.id || !decoded.email) {
+                  throw new Error('Token missing required fields');
+              }
               setUser({ id: decoded.id, email: decoded.email });
           } catch (e) {
-              authService.logout();
+              // Invalid token - clear it but don't reload to avoid infinite loop
+              console.error('Invalid token format:', e);
+              authService.clearToken();
+              setUser(null);
+              setIsLoading(false);
           }
+      } else {
+          setIsLoading(false);
       }
       
       // Load local preferences
@@ -96,29 +112,47 @@ const App: React.FC = () => {
       const savedTheme = localStorage.getItem('beliarg_theme') as Theme;
       if (savedLang) setLang(savedLang);
       if (savedTheme) setTheme(savedTheme);
-      
-      setIsLoading(false);
   }, []);
 
   // Load Data when User changes
   useEffect(() => {
     const loadData = async () => {
-        if (!user) return; 
-        setIsLoading(true);
-        const data = await storageService.loadAllData();
-        setTasks(data.tasks || []);
-        setTransactions(data.transactions || []);
-        setRituals(data.rituals || []);
-        setNotes(data.notes || []);
-        setSigils(data.sigils || []);
+        if (!user) {
+            setIsLoading(false);
+            return;
+        }
         
-        if (data.stats) setStats(data.stats);
+        setIsLoading(true);
+        try {
+            const data = await storageService.loadAllData();
+            setTasks(data.tasks || []);
+            // Ensure amount is always a number for transactions
+            const normalizedTransactions = (data.transactions || []).map(tr => ({
+                ...tr,
+                amount: typeof tr.amount === 'number' ? tr.amount : (typeof tr.amount === 'string' ? parseFloat(tr.amount) : 0) || 0
+            }));
+            setTransactions(normalizedTransactions);
+            setRituals(data.rituals || []);
+            setNotes(data.notes || []);
+            setSigils(data.sigils || []);
+            
+            if (data.stats) setStats(data.stats);
 
-        checkRitualStreaks(data.rituals || []);
-        setIsLoading(false);
+            checkRitualStreaks(data.rituals || []);
+        } catch (error) {
+            console.error('Failed to load data:', error);
+            // Handle authentication errors - clear token and reset user
+            if (error instanceof AuthenticationError) {
+                console.warn('Authentication failed, clearing session');
+                authService.clearToken();
+                setUser(null);
+            }
+        } finally {
+            setIsLoading(false);
+        }
     };
     
-    if (user) loadData();
+    loadData();
   }, [user]);
 
   useEffect(() => {
@@ -153,10 +187,11 @@ const App: React.FC = () => {
 
   const realBalance = useMemo(() => {
       return transactions.reduce((acc, curr) => {
+          const amount = typeof curr.amount === 'number' ? curr.amount : parseFloat(curr.amount) || 0;
           if (curr.type === TransactionType.TRIBUTE) {
-              return acc + curr.amount;
+              return acc + amount;
           } else {
-              return acc - curr.amount;
+              return acc - amount;
           }
       }, 0);
   }, [transactions]);
@@ -379,9 +414,8 @@ const App: React.FC = () => {
       return <AuthPage onLogin={handleLogin} lang={lang} onSetLang={setLang} />;
   }
 
-  if (isLoading) {
-      return <div className="min-h-screen flex items-center justify-center bg-bg-app text-hell-gold font-cinzel animate-pulse">SUMMONING THE FORGE...</div>;
-  }
+  // Show loading only on initial load, not when switching views
+  const isInitialLoad = isLoading && tasks.length === 0 && transactions.length === 0;
 
   return (
     <div className="min-h-screen pb-24 font-sans text-text-primary relative overflow-x-hidden">
@@ -419,7 +453,7 @@ const App: React.FC = () => {
                 <div className="bg-bg-input px-3 py-1 rounded border border-hell-700 flex items-center gap-2 cursor-default">
                    <span className="text-xs text-hell-500">🪙</span>
                    <div className={`font-mono text-sm sm:text-lg drop-shadow-sm ${realBalance >= 0 ? 'text-hell-gold' : 'text-red-500'}`}>
-                      {realBalance.toFixed(0)} 
+                      {(typeof realBalance === 'number' ? realBalance : 0).toFixed(0)} 
                    </div>
                 </div>
             </div>
@@ -438,12 +472,21 @@ const App: React.FC = () => {
       {/* Main Content Rendering ... Same as before but using view state */}
       <main className="max-w-3xl mx-auto p-3 sm:p-4 mt-2 sm:mt-4 relative z-10">
         
-        {view !== 'analytics' && (
-           <div className="mb-4 relative group">
-              <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none rtl:right-3 rtl:left-auto"><span className="text-hell-500 text-lg">👁</span></div>
-              <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t.searchPlaceholder} className="w-full bg-bg-panel border border-hell-700 text-text-primary py-2 pl-10 pr-4 rtl:pr-10 rtl:pl-4 text-sm focus:border-hell-gold focus:ring-1 focus:ring-hell-gold outline-none transition-all placeholder-hell-700/50 font-serif" />
-           </div>
-        )}
+        {isInitialLoad ? (
+          <div className="min-h-[400px] flex items-center justify-center">
+            <div className="text-center">
+              <div className="text-hell-gold font-cinzel animate-pulse text-xl mb-4">SUMMONING THE FORGE...</div>
+              <div className="text-text-muted text-sm">Loading your data from the abyss...</div>
+            </div>
+          </div>
+        ) : (
+          <>
+            {view !== 'analytics' && (
+               <div className="mb-4 relative group">
+                  <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none rtl:right-3 rtl:left-auto"><span className="text-hell-500 text-lg">👁</span></div>
+                  <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t.searchPlaceholder} className="w-full bg-bg-panel border border-hell-700 text-text-primary py-2 pl-10 pr-4 rtl:pr-10 rtl:pl-4 text-sm focus:border-hell-gold focus:ring-1 focus:ring-hell-gold outline-none transition-all placeholder-hell-700/50 font-serif" />
+               </div>
+            )}
 
         {/* ... (Existing Views Render Logic - Task List, Finance, Analytics, Grimoire - No changes needed to the logic, just ensuring it's inside) ... */}
         {/* I will assume the render logic from the previous file is preserved here for brevity, as it depends on 'view' state */}
@@ -513,7 +556,7 @@ const App: React.FC = () => {
                     </div>
                     <HellButton variant="gold" onClick={() => { setEditingTransaction(null); setIsFinanceModalOpen(true); }} className="text-xs">{t.addRecord}</HellButton>
                 </div>
-                <div className="bg-bg-panel border border-hell-700 rounded overflow-hidden mb-6 shadow-lg overflow-x-auto"><table className="w-full text-left text-sm min-w-[300px]"><thead className="bg-hell-800 text-hell-500 font-cinzel uppercase tracking-wider text-xs"><tr><th className="p-3 rtl:text-right">{t.tableDate}</th><th className="p-3 rtl:text-right">{t.tableDesc}</th><th className="p-3 text-right rtl:text-left">{t.tableGold}</th><th className="p-3 w-16 text-center"></th></tr></thead><tbody className="divide-y divide-hell-700/50 text-xs sm:text-sm">{filteredTransactions.length === 0 && (<tr><td colSpan={4} className="p-8 text-center text-text-secondary italic">{t.emptyFinance}</td></tr>)}{filteredTransactions.map(tr => { const sigil = getSigil(tr.sigilId); return (<tr key={tr.id} className="group hover:bg-hell-800/30 transition"><td className="p-3 text-text-muted font-mono whitespace-nowrap">{new Date(tr.date).toLocaleDateString()}{sigil && (<div className="mt-1 text-[9px] px-1 rounded w-fit text-bg-app font-bold" style={{backgroundColor: sigil.color}}>{sigil.title}</div>)}</td><td className="p-3 text-text-primary font-medium truncate max-w-[150px]">{tr.title}</td><td className={`p-3 text-right rtl:text-left font-mono font-bold ${tr.type === TransactionType.TRIBUTE ? 'text-hell-gold' : 'text-red-500'}`}>{tr.type === TransactionType.TRIBUTE ? '+' : '-'}{tr.amount.toFixed(2)}</td><td className="p-3 text-center"><button onClick={() => openEditTransaction(tr)} className="text-text-secondary hover:text-hell-gold mr-2">✏️</button><button onClick={() => requestDeleteItem(tr.id, 'transaction')} className="text-text-secondary hover:text-red-600">✖</button></td></tr>);})}</tbody></table></div>
+                <div className="bg-bg-panel border border-hell-700 rounded overflow-hidden mb-6 shadow-lg overflow-x-auto"><table className="w-full text-left text-sm min-w-[300px]"><thead className="bg-hell-800 text-hell-500 font-cinzel uppercase tracking-wider text-xs"><tr><th className="p-3 rtl:text-right">{t.tableDate}</th><th className="p-3 rtl:text-right">{t.tableDesc}</th><th className="p-3 text-right rtl:text-left">{t.tableGold}</th><th className="p-3 w-16 text-center"></th></tr></thead><tbody className="divide-y divide-hell-700/50 text-xs sm:text-sm">{filteredTransactions.length === 0 && (<tr><td colSpan={4} className="p-8 text-center text-text-secondary italic">{t.emptyFinance}</td></tr>)}{filteredTransactions.map(tr => { const sigil = getSigil(tr.sigilId); const amount = typeof tr.amount === 'number' ? tr.amount : parseFloat(tr.amount) || 0; return (<tr key={tr.id} className="group hover:bg-hell-800/30 transition"><td className="p-3 text-text-muted font-mono whitespace-nowrap">{new Date(tr.date).toLocaleDateString()}{sigil && (<div className="mt-1 text-[9px] px-1 rounded w-fit text-bg-app font-bold" style={{backgroundColor: sigil.color}}>{sigil.title}</div>)}</td><td className="p-3 text-text-primary font-medium truncate max-w-[150px]">{tr.title}</td><td className={`p-3 text-right rtl:text-left font-mono font-bold ${tr.type === TransactionType.TRIBUTE ? 'text-hell-gold' : 'text-red-500'}`}>{tr.type === TransactionType.TRIBUTE ? '+' : '-'}{amount.toFixed(2)}</td><td className="p-3 text-center"><button onClick={() => openEditTransaction(tr)} className="text-text-secondary hover:text-hell-gold mr-2">✏️</button><button onClick={() => requestDeleteItem(tr.id, 'transaction')} className="text-text-secondary hover:text-red-600">✖</button></td></tr>);})}</tbody></table></div>
             </>
         )}
         {view === 'analytics' && (<AnalyticsView transactions={transactions} completedTasks={historyTasks} lang={lang} />)}
@@ -522,6 +565,8 @@ const App: React.FC = () => {
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4"><h2 className="text-xl text-hell-gold font-cinzel">{t.grimoireHeader}</h2><HellButton variant="gold" onClick={() => { setEditingNote(null); setIsGrimoireModalOpen(true); }} className="text-xs">{t.newScroll}</HellButton></div>
                 {filteredNotes.length === 0 ? (<div className="text-center py-12 border border-hell-700/50 bg-bg-panel/30"><div className="text-4xl mb-2 opacity-50">📜</div><p className="text-text-secondary font-serif italic text-sm">{t.emptyGrimoire}</p></div>) : (<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">{filteredNotes.map(note => (<GrimoireCard key={note.id} note={note} sigil={getSigil(note.sigilId)} onEdit={(n) => { setEditingNote(n); setIsGrimoireModalOpen(true); }} onDelete={(id) => requestDeleteItem(id, 'note')} lang={lang} />))}</div>)}
             </>
+        )}
+          </>
         )}
       </main>
 

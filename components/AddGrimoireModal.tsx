@@ -53,6 +53,12 @@ export const AddGrimoireModal: React.FC<AddGrimoireModalProps> = ({ isOpen, onCl
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validate content length
+    if (content.length > 300) {
+        alert('Содержание не может превышать 300 символов');
+        return;
+    }
+    
     let newSigilData = undefined;
     if (isCreatingSigil && newSigilName.trim()) {
         newSigilData = { title: newSigilName, color: newSigilColor };
@@ -61,7 +67,7 @@ export const AddGrimoireModal: React.FC<AddGrimoireModalProps> = ({ isOpen, onCl
     onSave({
       id: editingNote?.id,
       title,
-      content,
+      content: content.substring(0, 300), // Ensure max 300 chars
       sigilId: isCreatingSigil ? undefined : (selectedSigilId || undefined)
     }, newSigilData);
     
@@ -151,11 +157,21 @@ export const AddGrimoireModal: React.FC<AddGrimoireModalProps> = ({ isOpen, onCl
 
             {/* Content Textarea - Takes remaining space */}
             <div className="flex-1 flex flex-col min-h-[200px]">
-                <label className="block text-hell-500 text-[10px] font-bold mb-1 uppercase tracking-wider">{t.labelNoteContent}</label>
+                <div className="flex justify-between items-center mb-1">
+                    <label className="block text-hell-500 text-[10px] font-bold uppercase tracking-wider">{t.labelNoteContent}</label>
+                    <span className={`text-[10px] font-mono ${content.length > 300 ? 'text-red-500' : content.length > 250 ? 'text-hell-gold' : 'text-hell-600'}`}>
+                        {content.length}/300
+                    </span>
+                </div>
                 <textarea
                     required
                     value={content}
-                    onChange={(e) => setContent(e.target.value)}
+                    onChange={(e) => {
+                        if (e.target.value.length <= 300) {
+                            setContent(e.target.value);
+                        }
+                    }}
+                    maxLength={300}
                     className="flex-1 w-full bg-bg-app text-text-primary border border-hell-700 p-4 focus:border-hell-gold outline-none resize-none font-serif text-sm sm:text-base placeholder-hell-700/30 leading-relaxed"
                     placeholder={t.placeholderNoteContent}
                 />

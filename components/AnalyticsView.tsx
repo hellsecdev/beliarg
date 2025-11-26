@@ -76,15 +76,16 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ transactions, comp
           const date = new Date(tr.date);
           if (date.getFullYear() === selectedYear) {
               const m = date.getMonth();
+              const amount = typeof tr.amount === 'number' ? tr.amount : parseFloat(tr.amount) || 0;
               stats[m].transactions.push(tr);
               if (tr.type === TransactionType.TRIBUTE) {
-                  stats[m].income += tr.amount;
-                  stats[m].net += tr.amount;
-                  yIncome += tr.amount;
+                  stats[m].income += amount;
+                  stats[m].net += amount;
+                  yIncome += amount;
               } else {
-                  stats[m].expense += tr.amount;
-                  stats[m].net -= tr.amount;
-                  yExpense += tr.amount;
+                  stats[m].expense += amount;
+                  stats[m].net -= amount;
+                  yExpense += amount;
               }
           }
       });
@@ -173,16 +174,16 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ transactions, comp
         <div className="grid grid-cols-3 gap-2 mb-8 text-center">
              <div className="bg-bg-panel border border-hell-700 p-3 rounded-sm">
                  <div className="text-[10px] uppercase text-hell-500 tracking-widest mb-1">{t.income}</div>
-                 <div className="text-hell-gold font-mono text-sm font-bold">+{yearlyIncome.toFixed(0)}</div>
+                 <div className="text-hell-gold font-mono text-sm font-bold">+{(typeof yearlyIncome === 'number' ? yearlyIncome : 0).toFixed(0)}</div>
              </div>
              <div className="bg-bg-panel border border-hell-700 p-3 rounded-sm">
                  <div className="text-[10px] uppercase text-text-muted tracking-widest mb-1">{t.expense}</div>
-                 <div className="text-red-500 font-mono text-sm font-bold">-{yearlyExpense.toFixed(0)}</div>
+                 <div className="text-red-500 font-mono text-sm font-bold">-{(typeof yearlyExpense === 'number' ? yearlyExpense : 0).toFixed(0)}</div>
              </div>
              <div className="bg-bg-panel border border-hell-gold/50 p-3 rounded-sm shadow-[0_0_15px_rgba(251,191,36,0.1)]">
                  <div className="text-[10px] uppercase text-hell-lava tracking-widest mb-1">{t.net}</div>
                  <div className={`font-mono text-sm font-bold ${yearlyNet >= 0 ? 'text-hell-gold' : 'text-red-500'}`}>
-                     {yearlyNet >= 0 ? '+' : ''}{yearlyNet.toFixed(0)}
+                     {yearlyNet >= 0 ? '+' : ''}{(typeof yearlyNet === 'number' ? yearlyNet : 0).toFixed(0)}
                  </div>
              </div>
         </div>
@@ -250,13 +251,13 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ transactions, comp
                                         </span>
                                     </td>
                                     <td className="p-3 text-right text-hell-gold/80 font-mono opacity-80 hidden sm:table-cell">
-                                        {stat.income > 0 ? `+${stat.income.toFixed(0)}` : '-'}
+                                        {stat.income > 0 ? `+${(typeof stat.income === 'number' ? stat.income : 0).toFixed(0)}` : '-'}
                                     </td>
                                     <td className="p-3 text-right text-red-500/80 font-mono opacity-80 hidden sm:table-cell">
-                                        {stat.expense > 0 ? `-${stat.expense.toFixed(0)}` : '-'}
+                                        {stat.expense > 0 ? `-${(typeof stat.expense === 'number' ? stat.expense : 0).toFixed(0)}` : '-'}
                                     </td>
                                     <td className={`p-3 pr-4 text-right font-mono font-bold ${stat.net > 0 ? 'text-hell-gold' : stat.net < 0 ? 'text-red-500' : 'text-text-muted'}`}>
-                                        {stat.net.toFixed(0)}
+                                        {(typeof stat.net === 'number' ? stat.net : 0).toFixed(0)}
                                     </td>
                                 </tr>
                                 
@@ -276,7 +277,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ transactions, comp
                                                                     <span className="text-[10px] text-text-muted font-mono">{new Date(tr.date).toLocaleDateString()}</span>
                                                                 </div>
                                                                 <span className={`font-mono font-bold ${tr.type === TransactionType.TRIBUTE ? 'text-hell-gold' : 'text-red-500'}`}>
-                                                                    {tr.type === TransactionType.TRIBUTE ? '+' : '-'}{tr.amount.toFixed(2)}
+                                                                    {tr.type === TransactionType.TRIBUTE ? '+' : '-'}{(typeof tr.amount === 'number' ? tr.amount : parseFloat(tr.amount) || 0).toFixed(2)}
                                                                 </span>
                                                             </div>
                                                         ))}

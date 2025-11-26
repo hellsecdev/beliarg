@@ -79,7 +79,7 @@ export const MarketModal: React.FC<MarketModalProps> = ({ isOpen, onClose, stats
                 <p className="text-[10px] text-text-muted uppercase">{t.marketDesc}</p>
             </div>
             <div className="text-right">
-                <div className="text-xl text-hell-gold font-mono">{stats.gold.toFixed(0)} 🪙</div>
+                <div className="text-xl text-hell-gold font-mono">{(typeof stats.gold === 'number' ? stats.gold : 0).toFixed(0)} 🪙</div>
                 <button onClick={onClose} className="text-xs text-hell-500 hover:text-red-500 uppercase mt-1">[X] {t.financeClose}</button>
             </div>
         </div>

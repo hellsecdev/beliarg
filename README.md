@@ -35,6 +35,9 @@ It features a unique "Hellish" aesthetic, turning daily tasks into "Chains", exp
 
 ### 📜 Grimoire & Rituals
 - **Grimoire:** A dedicated notebook for thoughts, styled as ancient scrolls.
+  - **Content Limit:** Each scroll (note) is limited to 300 characters to keep thoughts concise and focused.
+  - **Character Counter:** Real-time character count display (X/300) with visual feedback.
+  - **Sigil Tagging:** Organize scrolls with colored sigils (tags).
 - **Rituals:** Habit tracker with streak logic. Keep the fire burning.
 
 ### 🌍 World Aspect
@@ -69,6 +72,7 @@ It features a unique "Hellish" aesthetic, turning daily tasks into "Chains", exp
 - **Auto-reconnection:** Automatic PostgreSQL reconnection on connection loss
 - **Error Handling:** Comprehensive error logging and handling
 - **Data Persistence:** All data stored in PostgreSQL with user isolation
+- **Data Validation:** Client and server-side validation (e.g., note content limited to 300 characters)
 - **HTTPS:** SSL/TLS encryption via Let's Encrypt
 - **PWA Ready:** Full Progressive Web App support with custom icons
 
