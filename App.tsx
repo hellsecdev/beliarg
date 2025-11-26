@@ -46,6 +46,7 @@ const App: React.FC = () => {
   const [taskSort, setTaskSort] = useState<'DEADLINE' | 'NEWEST' | 'MANUAL'>('DEADLINE');
   const [finFilterType, setFinFilterType] = useState<TransactionType | 'ALL'>('ALL');
   const [finSort, setFinSort] = useState<'DATE_DESC' | 'AMT_DESC' | 'AMT_ASC'>('DATE_DESC');
+  const [financePage, setFinancePage] = useState(1);
 
   // Settings State
   const [lang, setLang] = useState<Language>('ru');
@@ -154,6 +155,11 @@ const App: React.FC = () => {
     
     loadData();
   }, [user]);
+
+  // Reset finance page when filters or sort change
+  useEffect(() => {
+    setFinancePage(1);
+  }, [finFilterType, finSort, searchQuery]);
 
   useEffect(() => {
     localStorage.setItem('beliarg_theme', theme);
@@ -401,6 +407,16 @@ const App: React.FC = () => {
         if (finSort === 'AMT_ASC') return a.amount - b.amount;
         return new Date(b.date).getTime() - new Date(a.date).getTime();
     });
+
+  // Pagination for transactions
+  const ITEMS_PER_PAGE = 20;
+  const totalPages = Math.ceil(filteredTransactions.length / ITEMS_PER_PAGE);
+  const paginatedTransactions = useMemo(() => {
+    const startIndex = (financePage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    return filteredTransactions.slice(startIndex, endIndex);
+  }, [filteredTransactions, financePage]);
+
   const filteredNotes = notes.filter(n => matchesSearch(n.title + ' ' + n.content, n.sigilId)).sort((a, b) => b.updatedAt - a.updatedAt);
   const getNavClass = (viewName: AppView) => {
       const isActive = view === viewName;
@@ -556,7 +572,36 @@ const App: React.FC = () => {
                     </div>
                     <HellButton variant="gold" onClick={() => { setEditingTransaction(null); setIsFinanceModalOpen(true); }} className="text-xs">{t.addRecord}</HellButton>
                 </div>
-                <div className="bg-bg-panel border border-hell-700 rounded overflow-hidden mb-6 shadow-lg overflow-x-auto"><table className="w-full text-left text-sm min-w-[300px]"><thead className="bg-hell-800 text-hell-500 font-cinzel uppercase tracking-wider text-xs"><tr><th className="p-3 rtl:text-right">{t.tableDate}</th><th className="p-3 rtl:text-right">{t.tableDesc}</th><th className="p-3 text-right rtl:text-left">{t.tableGold}</th><th className="p-3 w-16 text-center"></th></tr></thead><tbody className="divide-y divide-hell-700/50 text-xs sm:text-sm">{filteredTransactions.length === 0 && (<tr><td colSpan={4} className="p-8 text-center text-text-secondary italic">{t.emptyFinance}</td></tr>)}{filteredTransactions.map(tr => { const sigil = getSigil(tr.sigilId); const amount = typeof tr.amount === 'number' ? tr.amount : parseFloat(tr.amount) || 0; return (<tr key={tr.id} className="group hover:bg-hell-800/30 transition"><td className="p-3 text-text-muted font-mono whitespace-nowrap">{new Date(tr.date).toLocaleDateString()}{sigil && (<div className="mt-1 text-[9px] px-1 rounded w-fit text-bg-app font-bold" style={{backgroundColor: sigil.color}}>{sigil.title}</div>)}</td><td className="p-3 text-text-primary font-medium truncate max-w-[150px]">{tr.title}</td><td className={`p-3 text-right rtl:text-left font-mono font-bold ${tr.type === TransactionType.TRIBUTE ? 'text-hell-gold' : 'text-red-500'}`}>{tr.type === TransactionType.TRIBUTE ? '+' : '-'}{amount.toFixed(2)}</td><td className="p-3 text-center"><button onClick={() => openEditTransaction(tr)} className="text-text-secondary hover:text-hell-gold mr-2">✏️</button><button onClick={() => requestDeleteItem(tr.id, 'transaction')} className="text-text-secondary hover:text-red-600">✖</button></td></tr>);})}</tbody></table></div>
+                <div className="bg-bg-panel border border-hell-700 rounded overflow-hidden mb-6 shadow-lg overflow-x-auto"><table className="w-full text-left text-sm min-w-[300px]"><thead className="bg-hell-800 text-hell-500 font-cinzel uppercase tracking-wider text-xs"><tr><th className="p-3 rtl:text-right">{t.tableDate}</th><th className="p-3 rtl:text-right">{t.tableDesc}</th><th className="p-3 text-right rtl:text-left">{t.tableGold}</th><th className="p-3 w-16 text-center"></th></tr></thead><tbody className="divide-y divide-hell-700/50 text-xs sm:text-sm">{filteredTransactions.length === 0 && (<tr><td colSpan={4} className="p-8 text-center text-text-secondary italic">{t.emptyFinance}</td></tr>)}{paginatedTransactions.map(tr => { const sigil = getSigil(tr.sigilId); const amount = typeof tr.amount === 'number' ? tr.amount : parseFloat(tr.amount) || 0; return (<tr key={tr.id} className="group hover:bg-hell-800/30 transition"><td className="p-3 text-text-muted font-mono whitespace-nowrap">{new Date(tr.date).toLocaleDateString()}{sigil && (<div className="mt-1 text-[9px] px-1 rounded w-fit text-bg-app font-bold" style={{backgroundColor: sigil.color}}>{sigil.title}</div>)}</td><td className="p-3 text-text-primary font-medium truncate max-w-[150px]">{tr.title}</td><td className={`p-3 text-right rtl:text-left font-mono font-bold ${tr.type === TransactionType.TRIBUTE ? 'text-hell-gold' : 'text-red-500'}`}>{tr.type === TransactionType.TRIBUTE ? '+' : '-'}{amount.toFixed(2)}</td><td className="p-3 text-center"><button onClick={() => openEditTransaction(tr)} className="text-text-secondary hover:text-hell-gold mr-2">✏️</button><button onClick={() => requestDeleteItem(tr.id, 'transaction')} className="text-text-secondary hover:text-red-600">✖</button></td></tr>);})}</tbody></table></div>
+                {totalPages > 1 && (
+                    <div className="flex justify-center items-center gap-3 mt-4 mb-6">
+                        <button
+                            onClick={() => setFinancePage(prev => Math.max(1, prev - 1))}
+                            disabled={financePage === 1}
+                            className={`px-3 py-1 text-xs border border-hell-700 font-cinzel uppercase transition ${
+                                financePage === 1
+                                    ? 'opacity-30 cursor-not-allowed text-text-muted'
+                                    : 'text-hell-gold hover:bg-hell-800 hover:border-hell-gold'
+                            }`}
+                        >
+                            ← {t.previous}
+                        </button>
+                        <span className="text-text-secondary text-xs font-cinzel uppercase">
+                            {t.page} {financePage} {t.of} {totalPages}
+                        </span>
+                        <button
+                            onClick={() => setFinancePage(prev => Math.min(totalPages, prev + 1))}
+                            disabled={financePage === totalPages}
+                            className={`px-3 py-1 text-xs border border-hell-700 font-cinzel uppercase transition ${
+                                financePage === totalPages
+                                    ? 'opacity-30 cursor-not-allowed text-text-muted'
+                                    : 'text-hell-gold hover:bg-hell-800 hover:border-hell-gold'
+                            }`}
+                        >
+                            {t.next} →
+                        </button>
+                    </div>
+                )}
             </>
         )}
         {view === 'analytics' && (<AnalyticsView transactions={transactions} completedTasks={historyTasks} lang={lang} />)}

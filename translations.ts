@@ -55,6 +55,7 @@ export const translations = {
     labelNoteContent: "Содержание",
     placeholderNoteTitle: "Озаглавь...",
     placeholderNoteContent: "Излей разум в бездну...",
+    errorContentTooLong: "Содержание не может превышать 300 символов",
 
     // Finance View
     financeHeader: "Золотые Потоки",
@@ -67,6 +68,10 @@ export const translations = {
     tribute: "Дань (Доход)",
     sacrifice: "Жертва (Расход)",
     recurring: "Вечная Мука (Ежемесячно до конца года)",
+    page: "Страница",
+    of: "из",
+    previous: "Предыдущая",
+    next: "Следующая",
 
     // Analytics View
     analyticsHeader: "Весы Суда",
@@ -233,6 +238,7 @@ export const translations = {
     labelNoteContent: "Content",
     placeholderNoteTitle: "Title...",
     placeholderNoteContent: "Pour your mind into the abyss...",
+    errorContentTooLong: "Content cannot exceed 300 characters",
     
     // Finance View
     financeHeader: "Golden Streams",
@@ -245,6 +251,10 @@ export const translations = {
     tribute: "Tribute (Income)",
     sacrifice: "Sacrifice (Expense)",
     recurring: "Eternal Torment (Monthly until year end)",
+    page: "Page",
+    of: "of",
+    previous: "Previous",
+    next: "Next",
 
     // Analytics View
     analyticsHeader: "Scales of Judgment",
@@ -411,6 +421,7 @@ export const translations = {
     labelNoteContent: "תוכן",
     placeholderNoteTitle: "כותרת...",
     placeholderNoteContent: "שפוך את דעתך אל התהום...",
+    errorContentTooLong: "התוכן לא יכול לעלות על 300 תווים",
     
     // Finance View
     financeHeader: "זרמי זהב",
@@ -423,6 +434,10 @@ export const translations = {
     tribute: "מנחה (הכנסה)",
     sacrifice: "קורבן (הוצאה)",
     recurring: "עינוי נצחי (חודשי עד סוף השנה)",
+    page: "עמוד",
+    of: "מתוך",
+    previous: "הקודם",
+    next: "הבא",
 
     // Analytics View
     analyticsHeader: "מאזני המשפט",
