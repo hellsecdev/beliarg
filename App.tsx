@@ -412,7 +412,9 @@ const App: React.FC = () => {
   const historyTasks = tasks.filter(t => t.isCompleted).filter(t => matchesSearch(t.title + ' ' + t.description, t.sigilId)).sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
   
   // All completed tasks for analytics (without search filter)
-  const allCompletedTasks = tasks.filter(t => t.isCompleted).sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
+  const allCompletedTasks = useMemo(() => {
+    return tasks.filter(t => t.isCompleted).sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
+  }, [tasks]);
   
   // Pagination for history tasks
   const ITEMS_PER_PAGE = 10;
