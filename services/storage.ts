@@ -71,10 +71,10 @@ export const storageService = {
         if (USE_BACKEND) {
             try {
                 const res = await fetch(`${API_URL}/tasks`, {
-                    method: 'POST',
-                    headers: getHeaders(),
-                    body: JSON.stringify(task)
-                });
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify(task)
+            });
                 await handleResponse(res);
             } catch (e) {
                 console.error('Error saving task:', e);
@@ -87,9 +87,9 @@ export const storageService = {
         if (USE_BACKEND) {
             try {
                 const res = await fetch(`${API_URL}/tasks/${id}`, { 
-                    method: 'DELETE',
-                    headers: getHeaders()
-                });
+                method: 'DELETE',
+                headers: getHeaders()
+            });
                 await handleResponse(res);
             } catch (e) {
                 console.error('Error deleting task:', e);
@@ -102,10 +102,10 @@ export const storageService = {
         if (USE_BACKEND) {
             try {
                 const res = await fetch(`${API_URL}/transactions`, {
-                    method: 'POST',
-                    headers: getHeaders(),
-                    body: JSON.stringify(trans)
-                });
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify(trans)
+            });
                 await handleResponse(res);
             } catch (e) {
                 console.error('Error saving transaction:', e);
@@ -118,9 +118,9 @@ export const storageService = {
         if (USE_BACKEND) {
             try {
                 const res = await fetch(`${API_URL}/transactions/${id}`, { 
-                    method: 'DELETE',
-                    headers: getHeaders() 
-                });
+                method: 'DELETE',
+                headers: getHeaders() 
+            });
                 await handleResponse(res);
             } catch (e) {
                 console.error('Error deleting transaction:', e);
@@ -133,10 +133,10 @@ export const storageService = {
         if (USE_BACKEND) {
             try {
                 const res = await fetch(`${API_URL}/notes`, {
-                    method: 'POST',
-                    headers: getHeaders(),
-                    body: JSON.stringify(note)
-                });
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify(note)
+            });
                 await handleResponse(res);
             } catch (e) {
                 console.error('Error saving note:', e);
@@ -149,9 +149,9 @@ export const storageService = {
         if (USE_BACKEND) {
             try {
                 const res = await fetch(`${API_URL}/notes/${id}`, { 
-                    method: 'DELETE',
-                    headers: getHeaders()
-                });
+                 method: 'DELETE',
+                 headers: getHeaders()
+             });
                 await handleResponse(res);
             } catch (e) {
                 console.error('Error deleting note:', e);
@@ -164,10 +164,10 @@ export const storageService = {
         if (USE_BACKEND) {
             try {
                 const res = await fetch(`${API_URL}/rituals`, {
-                    method: 'POST',
-                    headers: getHeaders(),
-                    body: JSON.stringify(ritual)
-                });
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify(ritual)
+            });
                 await handleResponse(res);
             } catch (e) {
                 console.error('Error saving ritual:', e);
@@ -180,10 +180,10 @@ export const storageService = {
         if (USE_BACKEND) {
             try {
                 const res = await fetch(`${API_URL}/sigils`, {
-                    method: 'POST',
-                    headers: getHeaders(),
-                    body: JSON.stringify(sigil)
-                });
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify(sigil)
+            });
                 await handleResponse(res);
             } catch (e) {
                 console.error('Error saving sigil:', e);
