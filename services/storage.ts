@@ -42,16 +42,35 @@ export const storageService = {
                 const token = authService.getToken();
                 if (!token) throw new AuthenticationError("No token");
 
+                console.log('[storageService] Fetching data from /api/sync...');
                 const res = await fetch(`${API_URL}/sync`, { headers: getHeaders() });
-                return await handleResponse(res);
+                console.log('[storageService] Response status:', res.status);
+                
+                if (!res.ok) {
+                    const errorText = await res.text();
+                    console.error('[storageService] Sync failed with status:', res.status, errorText);
+                    throw new Error(`Sync failed: ${res.status} ${errorText}`);
+                }
+                
+                const data = await handleResponse(res);
+                console.log('[storageService] Data received:', {
+                    tasks: data.tasks?.length || 0,
+                    transactions: data.transactions?.length || 0,
+                    rituals: data.rituals?.length || 0,
+                    notes: data.notes?.length || 0,
+                    sigils: data.sigils?.length || 0,
+                    achievements: data.achievements?.length || 0
+                });
+                return data;
             } catch (e) {
-                console.error("Sync failed", e);
+                console.error("[storageService] Sync failed", e);
                 // Re-throw authentication errors so they can be handled by the app
                 if (e instanceof AuthenticationError) {
                     throw e;
                 }
                 // For other errors, return empty data
-                return { tasks: [], transactions: [], rituals: [], notes: [], sigils: [] };
+                console.warn("[storageService] Returning empty data due to error");
+                return { tasks: [], transactions: [], rituals: [], notes: [], sigils: [], achievements: [] };
             }
         }
         // Fallback (should normally not be used in auth mode)

@@ -196,6 +196,17 @@ app.get('/api/sync', authenticateToken, async (req, res) => {
     const notesRes = await client.query('SELECT * FROM notes WHERE user_id = $1', [userId]);
     const ritualsRes = await client.query('SELECT * FROM rituals WHERE user_id = $1', [userId]);
     const sigilsRes = await client.query('SELECT * FROM sigils WHERE user_id = $1', [userId]);
+    
+    // Table is created manually via SQL migration
+    // Just query the table
+    let achievementsRes;
+    try {
+        achievementsRes = await client.query('SELECT * FROM achievements WHERE user_id = $1', [userId]);
+    } catch (achievementsErr) {
+        console.error('Achievements table error (non-critical):', achievementsErr.message);
+        // If table doesn't exist, return empty array
+        achievementsRes = { rows: [] };
+    }
 
     // Convert task fields from snake_case to camelCase and convert timestamps
     const tasks = tasksRes.rows.map(task => {
@@ -277,12 +288,23 @@ app.get('/api/sync', authenticateToken, async (req, res) => {
       color: sigil.color
     }));
 
+    // Convert achievements fields from snake_case to camelCase
+    const achievements = achievementsRes.rows.map(a => ({
+      id: a.id,
+      userId: a.user_id,
+      type: a.type,
+      unlockedAt: a.unlocked_at ? parseInt(a.unlocked_at) : undefined,
+      progress: a.progress || 0,
+      target: a.target || 0
+    }));
+
     res.json({
       tasks,
       transactions,
       notes,
       rituals,
-      sigils
+      sigils,
+      achievements
     });
   } catch (err) {
     console.error('Sync error:', err.message);
@@ -596,9 +618,120 @@ app.delete('/api/notes/:id', authenticateToken, async (req, res) => {
     }
 });
 
-// Serve static files from the React app
+// --- ACHIEVEMENTS ROUTES ---
+
+// Get all achievements for user
+app.get('/api/achievements', authenticateToken, async (req, res) => {
+    try {
+        await ensureConnection();
+        const userId = req.user.id;
+        
+        // Table is created manually via SQL migration
+        // Just query the table
+        let achievementsRes;
+        try {
+            achievementsRes = await client.query(
+                'SELECT * FROM achievements WHERE user_id = $1 ORDER BY unlocked_at DESC NULLS LAST, type',
+                [userId]
+            );
+        } catch (selectErr) {
+            console.error('Failed to select achievements:', selectErr.message);
+            // If table doesn't exist, return empty array
+            achievementsRes = { rows: [] };
+        }
+        
+        // Convert to camelCase
+        const achievements = achievementsRes.rows.map(a => ({
+            id: a.id,
+            userId: a.user_id,
+            type: a.type,
+            unlockedAt: a.unlocked_at ? parseInt(a.unlocked_at) : undefined,
+            progress: a.progress || 0,
+            target: a.target || 0
+        }));
+        
+        res.json(achievements);
+    } catch (err) {
+        console.error('Get achievements error:', err.message);
+        console.error('Error code:', err.code);
+        console.error('Stack:', err.stack);
+        res.status(500).json({ error: err.message || 'Failed to get achievements' });
+    }
+});
+
+// Check/Update achievement
+app.post('/api/achievements/check', authenticateToken, async (req, res) => {
+    try {
+        await ensureConnection();
+        const { type, progress, target } = req.body;
+        const userId = req.user.id;
+        
+        // Table is created manually via SQL migration
+        // Check if achievement exists
+        let existingRes;
+        try {
+            existingRes = await client.query(
+                'SELECT * FROM achievements WHERE user_id = $1 AND type = $2',
+                [userId, type]
+            );
+        } catch (selectErr) {
+            console.error('Failed to select achievement:', selectErr.message);
+            // If table doesn't exist, return error
+            return res.status(500).json({ success: false, error: 'Achievements table not available' });
+        }
+        
+        const isUnlocked = progress >= target;
+        const unlockedAt = isUnlocked ? Date.now() : null;
+        
+        try {
+            if (existingRes.rows.length > 0) {
+                // Update existing achievement
+                const existing = existingRes.rows[0];
+                // Only update unlocked_at if it's being unlocked now (wasn't unlocked before)
+                const newUnlockedAt = (isUnlocked && !existing.unlocked_at) ? unlockedAt : existing.unlocked_at;
+                
+                await client.query(
+                    `UPDATE achievements 
+                     SET progress = $1, target = $2, unlocked_at = COALESCE($3, unlocked_at)
+                     WHERE user_id = $4 AND type = $5`,
+                    [progress, target, newUnlockedAt, userId, type]
+                );
+            } else {
+                // Insert new achievement
+                await client.query(
+                    `INSERT INTO achievements (user_id, type, unlocked_at, progress, target)
+                     VALUES ($1, $2, $3, $4, $5)
+                     ON CONFLICT (user_id, type) DO UPDATE SET
+                        progress = EXCLUDED.progress,
+                        target = EXCLUDED.target,
+                        unlocked_at = COALESCE(EXCLUDED.unlocked_at, achievements.unlocked_at)`,
+                    [userId, type, unlockedAt, progress, target]
+                );
+            }
+        } catch (updateErr) {
+            console.error('Failed to update achievement (non-critical):', updateErr.message);
+            return res.json({ success: false, error: 'Failed to save achievement' });
+        }
+        
+        res.json({ success: true, unlocked: isUnlocked });
+    } catch (err) {
+        console.error('Check achievement error:', err.message);
+        console.error('Error code:', err.code);
+        console.error('Stack:', err.stack);
+        res.status(500).json({ error: err.message || 'Failed to check achievement' });
+    }
+});
+
+// Serve static files from the React app (but not API routes)
 const distPath = path.join(__dirname, '..', 'dist');
-app.use(express.static(distPath));
+app.use((req, res, next) => {
+  // Skip static files for API routes
+  if (req.path.startsWith('/api')) {
+    return next();
+  }
+  // Use express.static middleware
+  return express.static(distPath)(req, res, next);
+});
 
 // SPA fallback: send all non-API requests to index.html
 app.get('*', (req, res) => {

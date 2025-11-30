@@ -35,6 +35,8 @@ export const translations = {
     navTreasury: "Казна",
     navAsh: "Пепел",
     navAnalytics: "Суд",
+    navCalendar: "Календарь",
+    navAchievements: "Достижения",
     navGrimoire: "Гримуар",
     
     // Active View
@@ -218,6 +220,8 @@ export const translations = {
     navTreasury: "Treasury",
     navAsh: "Ash",
     navAnalytics: "Judgment",
+    navCalendar: "Calendar",
+    navAchievements: "Achievements",
     navGrimoire: "Grimoire",
     
     // Active View
@@ -401,6 +405,8 @@ export const translations = {
     navTreasury: "אוצר",
     navAsh: "אפר",
     navAnalytics: "משפט",
+    navCalendar: "לוח שנה",
+    navAchievements: "הישגים",
     navGrimoire: "גרימואר",
     
     // Active View

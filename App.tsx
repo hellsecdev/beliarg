@@ -1,10 +1,12 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Task, Difficulty, PlayerStats, AppView, Transaction, TransactionType, Language, Theme, Ritual, Sigil, Note, User } from './types';
+import { Task, Difficulty, PlayerStats, AppView, Transaction, TransactionType, Language, Theme, Ritual, Sigil, Note, User, Achievement } from './types';
 import { TaskCard } from './components/TaskCard';
 import { AddSoulModal } from './components/AddSoulModal';
 import { AddTransactionModal } from './components/AddTransactionModal';
 import { AnalyticsView } from './components/AnalyticsView';
+import { CalendarView } from './components/CalendarView';
+import { OfflineIndicator } from './components/OfflineIndicator';
 import { RitualCard } from './components/RitualCard';
 import { AddRitualModal } from './components/AddRitualModal';
 import { GrimoireCard } from './components/GrimoireCard';
@@ -31,6 +33,9 @@ const App: React.FC = () => {
   const [rituals, setRituals] = useState<Ritual[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
   const [sigils, setSigils] = useState<Sigil[]>([]);
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [isSyncing, setIsSyncing] = useState(false);
   
   const [stats, setStats] = useState<PlayerStats>({ 
       soulsCollected: 0,
@@ -127,8 +132,22 @@ const App: React.FC = () => {
         
         setIsLoading(true);
         try {
+            console.log('[App] Loading data from server...');
             const data = await storageService.loadAllData();
-            setTasks(data.tasks || []);
+            console.log('[App] Data loaded:', {
+                tasks: data.tasks?.length || 0,
+                transactions: data.transactions?.length || 0,
+                rituals: data.rituals?.length || 0,
+                notes: data.notes?.length || 0,
+                sigils: data.sigils?.length || 0,
+                achievements: data.achievements?.length || 0
+            });
+            
+            const loadedTasks = data.tasks || [];
+            const completedTasksCount = loadedTasks.filter(t => t.isCompleted).length;
+            console.log('[App] Completed tasks:', completedTasksCount, 'out of', loadedTasks.length);
+            
+            setTasks(loadedTasks);
             // Ensure amount is always a number for transactions
             const normalizedTransactions = (data.transactions || []).map(tr => ({
                 ...tr,
@@ -138,10 +157,17 @@ const App: React.FC = () => {
             setRituals(data.rituals || []);
             setNotes(data.notes || []);
             setSigils(data.sigils || []);
+            const initialAchievements = data.achievements || [];
+            console.log('[App] Initial achievements loaded:', initialAchievements.length);
+            setAchievements(initialAchievements);
             
             if (data.stats) setStats(data.stats);
 
             checkRitualStreaks(data.rituals || []);
+            
+            // Check achievements for existing data
+            console.log('[App] Starting checkAllAchievements...');
+            await checkAllAchievements(data.tasks || [], data.rituals || [], data.notes || [], data.transactions || []);
         } catch (error) {
             console.error('Failed to load data:', error);
             // Handle authentication errors - clear token and reset user
@@ -191,6 +217,229 @@ const App: React.FC = () => {
     }
 
   }, [theme, lang]);
+
+  // Online/Offline event listeners
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      // Trigger sync when coming back online
+      syncOfflineData();
+    };
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Sync offline data when coming back online
+  const syncOfflineData = async () => {
+    if (!isOnline || !user) return;
+    
+    setIsSyncing(true);
+    try {
+      // Import offlineStorage dynamically to avoid issues if IndexedDB is not available
+      const { offlineStorage } = await import('./services/offlineStorage');
+      const pendingOps = await offlineStorage.getPendingOperations();
+      
+      if (pendingOps.length > 0) {
+        // Send batch sync request
+        const res = await fetch('/api/sync/batch', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authService.getToken()}`
+          },
+          body: JSON.stringify({ operations: pendingOps })
+        });
+
+        if (res.ok) {
+          // Clear pending operations
+          for (const op of pendingOps) {
+            await offlineStorage.removePendingOperation(op.id);
+          }
+          
+          // Reload data from server
+          const data = await storageService.loadAllData();
+          setTasks(data.tasks || []);
+          setTransactions(data.transactions || []);
+          setRituals(data.rituals || []);
+          setNotes(data.notes || []);
+          setSigils(data.sigils || []);
+          setAchievements(data.achievements || []);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to sync offline data:', error);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  // Check achievements
+  const checkAchievements = async (type: string, progress: number, target: number) => {
+    if (!user) return;
+    
+    try {
+      const res = await fetch('/api/achievements/check', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authService.getToken()}`
+        },
+        body: JSON.stringify({ type, progress, target })
+      });
+
+      if (res.ok) {
+        // Reload achievements
+        const achievementsRes = await fetch('/api/achievements', {
+          headers: {
+            'Authorization': `Bearer ${authService.getToken()}`
+          }
+        });
+        if (achievementsRes.ok) {
+          const achievementsData = await achievementsRes.json();
+          setAchievements(achievementsData);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to check achievements:', error);
+    }
+  };
+
+  // Check achievement without reloading (for batch operations)
+  const checkAchievementSilent = async (type: string, progress: number, target: number): Promise<void> => {
+    if (!user) {
+      console.warn(`[Achievements] No user, skipping ${type}`);
+      return;
+    }
+    
+    try {
+      console.log(`[Achievements] Checking ${type}: progress=${progress}, target=${target}`);
+      const res = await fetch('/api/achievements/check', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authService.getToken()}`
+        },
+        body: JSON.stringify({ type, progress, target })
+      });
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error(`[Achievements] Failed to check achievement ${type}:`, res.status, errorText);
+      } else {
+        console.log(`[Achievements] Successfully checked ${type}`);
+      }
+    } catch (error) {
+      console.error(`[Achievements] Error checking achievement ${type}:`, error);
+    }
+  };
+
+  // Check all achievements based on current data
+  const checkAllAchievements = async (tasks: Task[], rituals: Ritual[], notes: Note[], transactions: Transaction[]) => {
+    if (!user) return;
+    
+    try {
+      console.log('[Achievements] Checking all achievements...');
+      
+      // Task achievements
+      const completedTasks = tasks.filter(t => t.isCompleted);
+      const completedCount = completedTasks.length;
+      
+      console.log('[Achievements] Completed tasks count:', completedCount);
+      
+      // Always check task achievements, even if count is 0 (to create records)
+      await checkAchievementSilent('first_task', Math.min(completedCount, 1), 1);
+      await checkAchievementSilent('complete_10_tasks', completedCount, 10);
+      await checkAchievementSilent('complete_50_tasks', completedCount, 50);
+      await checkAchievementSilent('complete_100_tasks', completedCount, 100);
+      
+      // Note achievements
+      const notesCount = notes.length;
+      console.log('[Achievements] Notes count:', notesCount);
+      // Always check note achievements
+      await checkAchievementSilent('create_10_notes', notesCount, 10);
+      await checkAchievementSilent('create_50_notes', notesCount, 50);
+      
+      // Ritual streak achievements
+      const maxRitualStreak = rituals.length > 0 ? Math.max(...rituals.map(r => r.streak)) : 0;
+      console.log('[Achievements] Max ritual streak:', maxRitualStreak);
+      // Always check ritual streak achievements
+      await checkAchievementSilent('ritual_streak_7', Math.min(maxRitualStreak, 7), 7);
+      await checkAchievementSilent('ritual_streak_30', Math.min(maxRitualStreak, 30), 30);
+      
+      // Gold achievements (calculate from transactions)
+      let totalGold = 0;
+      transactions.forEach(t => {
+        if (t.type === TransactionType.TRIBUTE) {
+          totalGold += typeof t.amount === 'number' ? t.amount : parseFloat(t.amount) || 0;
+        }
+      });
+      console.log('[Achievements] Total gold:', totalGold);
+      // Always check gold achievements
+      await checkAchievementSilent('total_gold_1000', Math.min(totalGold, 1000), 1000);
+      await checkAchievementSilent('total_gold_10000', Math.min(totalGold, 10000), 10000);
+      
+      // Task streak achievements (calculate from completed tasks)
+      let maxTaskStreak = 0;
+      if (completedTasks.length > 0) {
+        // Group by completion date and find longest streak
+        const completionDates = completedTasks
+          .map(t => t.completedAt || t.createdAt)
+          .filter(d => d)
+          .map(d => new Date(d).toISOString().split('T')[0])
+          .sort()
+          .filter((v, i, a) => a.indexOf(v) === i); // unique dates
+        
+        // Calculate streak (consecutive days)
+        let currentStreak = 1;
+        for (let i = 1; i < completionDates.length; i++) {
+          const prevDate = new Date(completionDates[i - 1]);
+          const currDate = new Date(completionDates[i]);
+          const daysDiff = Math.floor((currDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24));
+          
+          if (daysDiff === 1) {
+            currentStreak++;
+          } else {
+            maxTaskStreak = Math.max(maxTaskStreak, currentStreak);
+            currentStreak = 1;
+          }
+        }
+        maxTaskStreak = Math.max(maxTaskStreak, currentStreak);
+      }
+      console.log('[Achievements] Max task streak:', maxTaskStreak);
+      // Always check task streak achievements
+      await checkAchievementSilent('task_streak_7', Math.min(maxTaskStreak, 7), 7);
+      await checkAchievementSilent('task_streak_30', Math.min(maxTaskStreak, 30), 30);
+      
+      // Reload achievements once at the end
+      console.log('[Achievements] Reloading achievements...');
+      try {
+        const achievementsRes = await fetch('/api/achievements', {
+          headers: {
+            'Authorization': `Bearer ${authService.getToken()}`
+          }
+        });
+        if (achievementsRes.ok) {
+          const achievementsData = await achievementsRes.json();
+          console.log('[Achievements] Loaded achievements:', achievementsData.length);
+          console.log('[Achievements] Achievements data:', achievementsData);
+          setAchievements(achievementsData);
+        } else {
+          const errorText = await achievementsRes.text();
+          console.error('[Achievements] Failed to reload achievements:', achievementsRes.status, errorText);
+        }
+      } catch (fetchError) {
+        console.error('[Achievements] Error fetching achievements:', fetchError);
+      }
+    } catch (error) {
+      console.error('Failed to check all achievements:', error);
+    }
+  };
 
   const handleLogin = (u: User) => {
       setUser(u);
@@ -263,6 +512,16 @@ const App: React.FC = () => {
       setTasks(prev => prev.map(t => t.id === id ? updatedTask : t));
       setStats(prev => ({ ...prev, soulsCollected: prev.soulsCollected + 1 }));
       await storageService.saveTask(updatedTask);
+      
+      // Check achievements
+      const completedCount = tasks.filter(t => t.isCompleted).length + 1;
+      await checkAchievements('complete_10_tasks', completedCount, 10);
+      await checkAchievements('complete_50_tasks', completedCount, 50);
+      await checkAchievements('complete_100_tasks', completedCount, 100);
+      if (completedCount === 1) {
+        await checkAchievements('first_task', 1, 1);
+      }
+      
       if (Math.random() > 0.90) {
           setIsCritModalOpen(true);
           if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 500]);
@@ -413,7 +672,18 @@ const App: React.FC = () => {
   
   // All completed tasks for analytics (without search filter)
   const allCompletedTasks = useMemo(() => {
-    return tasks.filter(t => t.isCompleted).sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
+    const completed = tasks.filter(t => t.isCompleted).sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
+    console.log('[App] allCompletedTasks calculated:', completed.length, 'out of', tasks.length, 'total tasks');
+    if (completed.length > 0) {
+      console.log('[App] Sample completed task:', {
+        id: completed[0].id,
+        title: completed[0].title,
+        isCompleted: completed[0].isCompleted,
+        completedAt: completed[0].completedAt,
+        createdAt: completed[0].createdAt
+      });
+    }
+    return completed;
   }, [tasks]);
   
   // Pagination for history tasks
@@ -511,6 +781,7 @@ const App: React.FC = () => {
             <button onClick={() => { setView('history'); audioService.playClick(); setSearchQuery(''); }} className={getNavClass('history')}>{t.navAsh}</button>
             <button onClick={() => { setView('finance'); audioService.playClick(); setSearchQuery(''); }} className={getNavClass('finance')}>{t.navTreasury}</button>
             <button onClick={() => { setView('analytics'); audioService.playClick(); }} className={getNavClass('analytics')}>{t.navAnalytics}</button>
+            <button onClick={() => { setView('calendar'); audioService.playClick(); setSearchQuery(''); }} className={getNavClass('calendar')}>{t.navCalendar}</button>
             <button onClick={() => { setView('grimoire'); audioService.playClick(); setSearchQuery(''); }} className={getNavClass('grimoire')}>{t.navGrimoire}</button>
           </nav>
         </div>
@@ -673,7 +944,8 @@ const App: React.FC = () => {
                 )}
             </>
         )}
-        {view === 'analytics' && (<AnalyticsView transactions={transactions} completedTasks={allCompletedTasks} lang={lang} />)}
+        {view === 'analytics' && (<AnalyticsView transactions={transactions} completedTasks={allCompletedTasks} rituals={rituals} notes={notes} achievements={achievements} lang={lang} />)}
+        {view === 'calendar' && (<CalendarView tasks={tasks} rituals={rituals} transactions={transactions} notes={notes} lang={lang} />)}
         {view === 'grimoire' && (
             <>
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4"><h2 className="text-xl text-hell-gold font-cinzel">{t.grimoireHeader}</h2><HellButton variant="gold" onClick={() => { setEditingNote(null); setIsGrimoireModalOpen(true); }} className="text-xs">{t.newScroll}</HellButton></div>
@@ -729,6 +1001,9 @@ const App: React.FC = () => {
       <ConfirmationModal isOpen={!!itemToDelete} onClose={() => setItemToDelete(null)} onConfirm={confirmDeleteItem} message={itemToDelete?.type === 'note' ? t.deleteNoteConfirm : t.deleteTransConfirm} lang={lang} />
       <CritModal isOpen={isCritModalOpen} onClose={() => setIsCritModalOpen(false)} lang={lang} />
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} lang={lang} theme={theme} onSetLang={setLang} onSetTheme={setTheme} user={user} />
+      
+      {/* Offline Indicator */}
+      <OfflineIndicator isOnline={isOnline} isSyncing={isSyncing} lang={lang} />
     </div>
   );
 };

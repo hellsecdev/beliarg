@@ -85,6 +85,15 @@ export interface Altar {
   targetAmount: number;
 }
 
-export type AppView = 'active' | 'history' | 'finance' | 'analytics' | 'grimoire';
+export interface Achievement {
+  id: string;
+  userId: string;
+  type: string;
+  unlockedAt?: number;
+  progress: number;
+  target: number;
+}
+
+export type AppView = 'active' | 'history' | 'finance' | 'analytics' | 'grimoire' | 'calendar' | 'achievements';
 export type Language = 'ru' | 'en' | 'he';
 export type Theme = 'light' | 'dark';

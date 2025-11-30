@@ -1,15 +1,19 @@
 
 import React, { useState, useMemo } from 'react';
-import { Transaction, TransactionType, Task } from '../types';
+import { Transaction, TransactionType, Task, Achievement } from '../types';
 import { translations, Language } from '../translations';
+import { AchievementsView } from './AchievementsView';
 
 interface AnalyticsViewProps {
   transactions: Transaction[];
-  completedTasks: Task[]; // NEW PROP: Need task history for Heatmap
+  completedTasks: Task[];
+  rituals: { id: string; title: string; streak: number; lastPerformed: number }[];
+  notes: { id: string; title: string; createdAt: number }[];
+  achievements: Achievement[];
   lang: Language;
 }
 
-export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ transactions, completedTasks, lang }) => {
+export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ transactions, completedTasks, rituals, notes, achievements, lang }) => {
   const t = translations[lang];
   
   // --- HEATMAP LOGIC ---
@@ -141,9 +145,100 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ transactions, comp
       }
   };
 
+  // Calculate statistics
+  const stats = useMemo(() => {
+    console.log('[AnalyticsView] Calculating stats with:', {
+      completedTasks: completedTasks.length,
+      rituals: rituals.length,
+      notes: notes.length
+    });
+    
+    const totalCompleted = completedTasks.length;
+    console.log('[AnalyticsView] Total completed tasks:', totalCompleted);
+    
+    // Calculate average per day
+    let avgPerDay = 0;
+    if (totalCompleted > 0) {
+      const firstTaskDate = Math.min(...completedTasks.map(t => t.completedAt || t.createdAt || Date.now()));
+      const daysSinceFirst = Math.max(1, Math.floor((Date.now() - firstTaskDate) / (1000 * 60 * 60 * 24)));
+      avgPerDay = totalCompleted / daysSinceFirst;
+      console.log('[AnalyticsView] Average per day:', avgPerDay, 'days since first:', daysSinceFirst);
+    }
+    
+    const maxRitualStreak = rituals.length > 0 ? Math.max(...rituals.map(r => r.streak)) : 0;
+    const totalNotes = notes.length;
+    
+    // Calculate most productive day of week
+    const dayCounts = [0, 0, 0, 0, 0, 0, 0]; // Sun-Sat
+    completedTasks.forEach(task => {
+      const timestamp = task.completedAt || task.createdAt;
+      if (timestamp) {
+        const day = new Date(timestamp).getDay();
+        dayCounts[day]++;
+      }
+    });
+    const mostProductiveDayIndex = dayCounts.indexOf(Math.max(...dayCounts));
+    const dayNames = lang === 'ru' 
+      ? ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота']
+      : lang === 'he'
+      ? ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת']
+      : ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+    return {
+      totalCompleted,
+      avgPerDay: avgPerDay.toFixed(2),
+      maxRitualStreak,
+      totalNotes,
+      mostProductiveDay: dayNames[mostProductiveDayIndex]
+    };
+  }, [completedTasks, rituals, notes, lang]);
+
   return (
     <div className="animate-flicker">
         
+        {/* STATISTICS SECTION */}
+        <div className="mb-8 bg-bg-panel border border-hell-700 p-4 rounded-sm">
+            <h3 className="text-xs font-cinzel text-hell-gold uppercase tracking-widest mb-4">
+                {lang === 'ru' ? 'Статистика' : lang === 'he' ? 'סטטיסטיקה' : 'Statistics'}
+            </h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="text-center">
+                    <div className="text-2xl text-hell-lava font-cinzel mb-1">{stats.totalCompleted}</div>
+                    <div className="text-[10px] text-text-muted uppercase">
+                        {lang === 'ru' ? 'Задач выполнено' : lang === 'he' ? 'משימות הושלמו' : 'Tasks Completed'}
+                    </div>
+                </div>
+                <div className="text-center">
+                    <div className="text-2xl text-hell-gold font-cinzel mb-1">{stats.avgPerDay}</div>
+                    <div className="text-[10px] text-text-muted uppercase">
+                        {lang === 'ru' ? 'В день (среднее)' : lang === 'he' ? 'ליום (ממוצע)' : 'Per Day (Avg)'}
+                    </div>
+                </div>
+                <div className="text-center">
+                    <div className="text-2xl text-hell-500 font-cinzel mb-1">{stats.maxRitualStreak}</div>
+                    <div className="text-[10px] text-text-muted uppercase">
+                        {lang === 'ru' ? 'Макс. серия ритуалов' : lang === 'he' ? 'רצף טקסים מקסימלי' : 'Max Ritual Streak'}
+                    </div>
+                </div>
+                <div className="text-center">
+                    <div className="text-2xl text-hell-700 font-cinzel mb-1">{stats.totalNotes}</div>
+                    <div className="text-[10px] text-text-muted uppercase">
+                        {lang === 'ru' ? 'Заметок создано' : lang === 'he' ? 'הערות נוצרו' : 'Notes Created'}
+                    </div>
+                </div>
+            </div>
+            {stats.mostProductiveDay && (
+                <div className="mt-4 text-center text-xs text-text-muted">
+                    {lang === 'ru' 
+                        ? `Самый продуктивный день: ${stats.mostProductiveDay}`
+                        : lang === 'he'
+                        ? `היום הפרודוקטיבי ביותר: ${stats.mostProductiveDay}`
+                        : `Most productive day: ${stats.mostProductiveDay}`
+                    }
+                </div>
+            )}
+        </div>
+
         {/* HEATMAP SECTION */}
         <div className="mb-8 bg-bg-panel border border-hell-700 p-4 rounded-sm">
             <h3 className="text-xs font-cinzel text-hell-gold uppercase tracking-widest mb-4 flex justify-between items-center">
@@ -320,6 +415,12 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ transactions, comp
              <p className="text-xs font-serif italic text-text-muted opacity-60">
                  {yearlyNet >= 0 ? `"${t.yearlySurplus}"` : `"${t.yearlyDebt}"`}
              </p>
+        </div>
+
+        {/* Achievements Section */}
+        <div className="mt-12">
+            {console.log('[AnalyticsView] Passing achievements to AchievementsView:', achievements.length, achievements)}
+            <AchievementsView achievements={achievements} lang={lang} />
         </div>
     </div>
   );
