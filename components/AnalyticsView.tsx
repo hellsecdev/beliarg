@@ -14,18 +14,40 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ transactions, comp
   
   // --- HEATMAP LOGIC ---
   const heatmapData = useMemo(() => {
+      // Debug logging
+      console.log('[Heatmap] Total completed tasks:', completedTasks.length);
+      const tasksWithCompletedAt = completedTasks.filter(t => t.completedAt);
+      const tasksWithoutCompletedAt = completedTasks.filter(t => !t.completedAt);
+      console.log('[Heatmap] Tasks with completedAt:', tasksWithCompletedAt.length);
+      console.log('[Heatmap] Tasks without completedAt (will use createdAt):', tasksWithoutCompletedAt.length);
+      
       // Generate last 365 days
       const days = [];
       const today = new Date();
       const activityMap = new Map<string, number>();
       
       // Map completed tasks to YYYY-MM-DD
+      // Use completedAt if available, otherwise fallback to createdAt for old tasks
       completedTasks.forEach(task => {
-          if (task.completedAt) {
-              const dateStr = new Date(task.completedAt).toISOString().split('T')[0];
-              activityMap.set(dateStr, (activityMap.get(dateStr) || 0) + 1);
+          const timestamp = task.completedAt || task.createdAt;
+          if (timestamp) {
+              try {
+                  const date = new Date(timestamp);
+                  if (!isNaN(date.getTime())) {
+                      const dateStr = date.toISOString().split('T')[0];
+                      activityMap.set(dateStr, (activityMap.get(dateStr) || 0) + 1);
+                  } else {
+                      console.warn('[Heatmap] Invalid timestamp for task:', task.id, timestamp);
+                  }
+              } catch (e) {
+                  console.error('[Heatmap] Error processing task date:', task.id, e);
+              }
           }
       });
+
+      console.log('[Heatmap] Activity map entries:', activityMap.size);
+      const totalCount = Array.from(activityMap.values()).reduce((sum, count) => sum + count, 0);
+      console.log('[Heatmap] Total activity count:', totalCount);
 
       // Fill last 364 days + today
       for (let i = 364; i >= 0; i--) {
