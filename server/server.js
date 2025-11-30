@@ -68,8 +68,38 @@ const ensureConnection = async () => {
   }
 };
 
+// Database migration: ensure completed_at column exists
+const ensureCompletedAtColumn = async () => {
+  try {
+    await ensureConnection();
+    // Check if column exists
+    const checkResult = await client.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name='tasks' AND column_name='completed_at'
+    `);
+    
+    if (checkResult.rows.length === 0) {
+      console.log('Adding completed_at column to tasks table...');
+      await client.query(`
+        ALTER TABLE tasks 
+        ADD COLUMN completed_at TIMESTAMP
+      `);
+      console.log('Column completed_at added successfully');
+    } else {
+      console.log('Column completed_at already exists');
+    }
+  } catch (err) {
+    console.error('Migration error:', err.message);
+    // Don't throw - allow server to start even if migration fails
+  }
+};
+
 client.connect()
-  .then(() => console.log('Connected to PostgreSQL'))
+  .then(async () => {
+    console.log('Connected to PostgreSQL');
+    await ensureCompletedAtColumn();
+  })
   .catch(err => {
     console.error('Initial connection error:', err.message);
     console.error('Stack:', err.stack);
