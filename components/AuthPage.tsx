@@ -49,8 +49,17 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLogin, lang, onSetLang }) 
         }
     };
 
-    const handleSocialLogin = (provider: string) => {
-        alert(`Social Login via ${provider} requires valid API credentials and callback logic. Please configure backend.`);
+    const handleTelegramLogin = async () => {
+        setError('');
+        setIsLoading(true);
+        
+        try {
+            const data = await authService.loginWithTelegram();
+            onLogin(data.user);
+        } catch (err: any) {
+            setError(err.message || 'Failed to authenticate with Telegram');
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -138,22 +147,14 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLogin, lang, onSetLang }) 
                      </form>
 
                      <div className="mt-6 pt-6 border-t border-hell-700/50">
-                         <div className="flex flex-col gap-3">
-                             <button 
-                                type="button" 
-                                onClick={() => handleSocialLogin('Google')}
-                                className="w-full bg-bg-app border border-hell-700 text-text-secondary py-2 text-xs font-bold uppercase hover:border-hell-gold hover:text-hell-gold hover:bg-hell-900 transition flex items-center justify-center gap-2 group"
-                             >
-                                 <span className="text-white group-hover:text-hell-gold transition-colors">G</span> {t.socialGoogle}
-                             </button>
-                             <button 
-                                type="button" 
-                                onClick={() => handleSocialLogin('Telegram')}
-                                className="w-full bg-bg-app border border-hell-700 text-text-secondary py-2 text-xs font-bold uppercase hover:border-hell-gold hover:text-hell-gold hover:bg-hell-900 transition flex items-center justify-center gap-2 group"
-                             >
-                                 <span className="text-white group-hover:text-hell-gold transition-colors">✈</span> {t.socialTelegram}
-                             </button>
-                         </div>
+                         <button 
+                            type="button" 
+                            onClick={handleTelegramLogin}
+                            disabled={isLoading}
+                            className="w-full bg-bg-app border border-hell-700 text-text-secondary py-2 text-xs font-bold uppercase hover:border-hell-gold hover:text-hell-gold hover:bg-hell-900 transition flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
+                         >
+                             <span className="text-white group-hover:text-hell-gold transition-colors">✈</span> {t.socialTelegram}
+                         </button>
                      </div>
                 </div>
                 

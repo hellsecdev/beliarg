@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 module.exports = {
   apps: [{
     name: 'beliarg',
@@ -6,7 +8,12 @@ module.exports = {
     exec_mode: 'fork',
     env: {
       NODE_ENV: 'production',
-      PORT: 3000
+      PORT: process.env.PORT || 3000,
+      DATABASE_URL: process.env.DATABASE_URL,
+      JWT_SECRET: process.env.JWT_SECRET,
+      TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN,
+      TELEGRAM_CHAT_ID: process.env.TELEGRAM_CHAT_ID,
+      TELEGRAM_LOGGING_ENABLED: process.env.TELEGRAM_LOGGING_ENABLED || 'false'
     },
     error_file: './logs/pm2-error.log',
     out_file: './logs/pm2-out.log',

@@ -1,0 +1,130 @@
+export const LogLevel = {
+  INFO: 'info',
+  WARN: 'warn',
+  ERROR: 'error'
+};
+
+class Logger {
+  constructor() {
+    this.telegramBotToken = process.env.TELEGRAM_BOT_TOKEN;
+    this.telegramChatId = process.env.TELEGRAM_CHAT_ID;
+    this.enabled = process.env.TELEGRAM_LOGGING_ENABLED === 'true' && !!this.telegramBotToken && !!this.telegramChatId;
+    
+    if (this.enabled) {
+      console.log('[Logger] Telegram logging enabled');
+    } else {
+      console.log('[Logger] Telegram logging disabled (check TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, TELEGRAM_LOGGING_ENABLED)');
+    }
+  }
+
+  formatMessage(entry) {
+    const emoji = entry.level === LogLevel.ERROR ? '🔥' : entry.level === LogLevel.WARN ? '⚠️' : 'ℹ️';
+    const levelLabel = entry.level.toUpperCase();
+    const time = new Date(entry.timestamp).toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+    
+    let message = `${emoji} [${levelLabel}] Beliarg Server\n`;
+    message += `⏰ Time: ${time}\n`;
+    message += `📝 Message: ${entry.message}\n`;
+    
+    if (entry.error) {
+      message += `❌ Error: ${entry.error.message}\n`;
+      if (entry.error.stack) {
+        // Ограничиваем длину stack trace
+        const stack = entry.error.stack.split('\n').slice(0, 5).join('\n');
+        message += `📍 Stack:\n\`\`\`\n${stack}\n\`\`\`\n`;
+      }
+    }
+    
+    if (entry.context) {
+      Object.entries(entry.context).forEach(([key, value]) => {
+        // Маскируем чувствительные данные
+        let displayValue = value;
+        if (typeof value === 'string' && (key.toLowerCase().includes('token') || key.toLowerCase().includes('password') || key.toLowerCase().includes('secret'))) {
+          displayValue = '***';
+        } else if (typeof value === 'object') {
+          displayValue = JSON.stringify(value).substring(0, 200);
+        }
+        message += `📍 ${key}: ${displayValue}\n`;
+      });
+    }
+    
+    return message;
+  }
+
+  async sendToTelegram(entry) {
+    if (!this.enabled || !this.telegramBotToken || !this.telegramChatId) {
+      return;
+    }
+
+    // Отправляем только ERROR и WARN, INFO слишком много
+    if (entry.level === LogLevel.INFO) {
+      return;
+    }
+
+    try {
+      const message = this.formatMessage(entry);
+      const url = `https://api.telegram.org/bot${this.telegramBotToken}/sendMessage`;
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          chat_id: this.telegramChatId,
+          text: message,
+          parse_mode: 'Markdown',
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[Logger] Failed to send message to Telegram:', response.status, errorText);
+      }
+    } catch (err) {
+      // Не блокируем выполнение при ошибке отправки
+      console.error('[Logger] Error sending to Telegram:', err);
+    }
+  }
+
+  log(level, message, error, context) {
+    const entry = {
+      level,
+      message,
+      error,
+      context,
+      timestamp: Date.now(),
+    };
+
+    // Всегда логируем в console
+    if (level === LogLevel.ERROR) {
+      console.error(`[${level.toUpperCase()}]`, message, error || '', context || '');
+    } else if (level === LogLevel.WARN) {
+      console.warn(`[${level.toUpperCase()}]`, message, context || '');
+    } else {
+      console.log(`[${level.toUpperCase()}]`, message, context || '');
+    }
+
+    // Отправляем в Telegram асинхронно (не блокируем)
+    this.sendToTelegram(entry).catch(err => {
+      console.error('[Logger] Failed to send to Telegram:', err);
+    });
+  }
+
+  info(message, context) {
+    this.log(LogLevel.INFO, message, undefined, context);
+  }
+
+  warn(message, context) {
+    this.log(LogLevel.WARN, message, undefined, context);
+  }
+
+  error(message, error, context) {
+    this.log(LogLevel.ERROR, message, error, context);
+  }
+}
+
+// Singleton instance
+export const logger = new Logger();
+
+

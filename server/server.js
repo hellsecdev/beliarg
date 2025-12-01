@@ -6,6 +6,8 @@ import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import crypto from 'crypto';
+import { logger } from '../services/logger.js';
 
 dotenv.config();
 
@@ -17,6 +19,7 @@ app.use(cors());
 app.use(express.json());
 
 const JWT_SECRET = process.env.JWT_SECRET || 'hellforge_secret_key_666';
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
 // Database Connection
 const isLocal = process.env.DATABASE_URL && process.env.DATABASE_URL.includes('localhost');
@@ -62,7 +65,9 @@ const ensureConnection = async () => {
         console.warn('PostgreSQL connection ended');
       });
     } catch (reconnectErr) {
-      console.error('Reconnection error:', reconnectErr.message);
+      logger.error('PostgreSQL reconnection error', reconnectErr, { 
+        action: 'reconnect'
+      });
       throw reconnectErr;
     }
   }
@@ -90,25 +95,30 @@ const ensureCompletedAtColumn = async () => {
       console.log('Column completed_at already exists');
     }
   } catch (err) {
-    console.error('Migration error:', err.message);
+    logger.error('Migration error', new Error(err.message), { 
+      migration: 'completed_at column'
+    });
     // Don't throw - allow server to start even if migration fails
   }
 };
 
 client.connect()
   .then(async () => {
-    console.log('Connected to PostgreSQL');
+    logger.info('Connected to PostgreSQL');
     await ensureCompletedAtColumn();
   })
   .catch(err => {
-    console.error('Initial connection error:', err.message);
-    console.error('Stack:', err.stack);
+    logger.error('Initial PostgreSQL connection error', err, { 
+      message: err.message,
+      code: err.code 
+    });
   });
 
 // Handle connection errors
 client.on('error', (err) => {
-  console.error('PostgreSQL client error:', err.message);
-  console.error('Error code:', err.code);
+  logger.error('PostgreSQL client error', err, { 
+    code: err.code 
+  });
 });
 
 client.on('end', () => {
@@ -131,6 +141,120 @@ const authenticateToken = (req, res, next) => {
 
 // --- AUTH ROUTES ---
 
+// Helper function to validate Telegram Web App data
+const validateTelegramData = (initData, botToken) => {
+  try {
+    const urlParams = new URLSearchParams(initData);
+    const hash = urlParams.get('hash');
+    urlParams.delete('hash');
+    
+    const dataCheckString = Array.from(urlParams.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, value]) => `${key}=${value}`)
+      .join('\n');
+    
+    const secretKey = crypto
+      .createHmac('sha256', 'WebAppData')
+      .update(botToken)
+      .digest();
+    
+    const calculatedHash = crypto
+      .createHmac('sha256', secretKey)
+      .update(dataCheckString)
+      .digest('hex');
+    
+    return calculatedHash === hash;
+  } catch (err) {
+    return false;
+  }
+};
+
+// Telegram Bot Authentication
+app.post('/api/auth/telegram', async (req, res) => {
+  if (!TELEGRAM_BOT_TOKEN) {
+    return res.status(503).json({ error: 'Telegram Bot not configured' });
+  }
+
+  const { initData } = req.body;
+  
+  if (!initData) {
+    return res.status(400).json({ error: 'Telegram initData is required' });
+  }
+
+  // Validate Telegram data
+  if (!validateTelegramData(initData, TELEGRAM_BOT_TOKEN)) {
+    logger.error('Invalid Telegram data signature', new Error('Invalid signature'), {
+      endpoint: 'POST /api/auth/telegram'
+    });
+    return res.status(401).json({ error: 'Invalid Telegram data signature' });
+  }
+
+  try {
+    await ensureConnection();
+    
+    // Parse Telegram user data
+    const urlParams = new URLSearchParams(initData);
+    const userStr = urlParams.get('user');
+    
+    if (!userStr) {
+      return res.status(400).json({ error: 'User data not found in initData' });
+    }
+
+    const telegramUser = JSON.parse(userStr);
+    const telegramId = telegramUser.id.toString();
+    const username = telegramUser.username || null;
+    const firstName = telegramUser.first_name || null;
+    const lastName = telegramUser.last_name || null;
+    const name = [firstName, lastName].filter(Boolean).join(' ') || username || `Telegram User ${telegramId}`;
+    const avatarUrl = telegramUser.photo_url || null;
+
+    // Check if user exists with this Telegram ID
+    let result = await client.query(
+      'SELECT * FROM users WHERE provider_type = $1 AND provider_id = $2',
+      ['telegram', telegramId]
+    );
+
+    let user;
+    if (result.rows.length > 0) {
+      // User exists, update info if needed
+      user = result.rows[0];
+      await client.query(
+        'UPDATE users SET name = $1, avatar_url = $2 WHERE id = $3',
+        [name, avatarUrl, user.id]
+      );
+      user.name = name;
+      user.avatar_url = avatarUrl;
+    } else {
+      // Create new user
+      // Generate email from telegram data (or use placeholder)
+      const email = username ? `${username}@telegram.local` : `telegram_${telegramId}@telegram.local`;
+      
+      const insertResult = await client.query(
+        'INSERT INTO users (email, provider_type, provider_id, name, avatar_url, password_hash) VALUES ($1, $2, $3, $4, $5, NULL) RETURNING id, email, name, avatar_url, provider_type, provider_id',
+        [email, 'telegram', telegramId, name, avatarUrl]
+      );
+      user = insertResult.rows[0];
+    }
+
+    const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET);
+    res.json({
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        avatarUrl: user.avatar_url
+      },
+      token
+    });
+  } catch (err) {
+    logger.error('Telegram auth error', err, {
+      code: err.code,
+      endpoint: 'POST /api/auth/telegram'
+    });
+    res.status(500).json({ error: err.message || 'Telegram authentication failed' });
+  }
+});
+
 // Register
 app.post('/api/auth/register', async (req, res) => {
     const { email, password } = req.body;
@@ -145,12 +269,13 @@ app.post('/api/auth/register', async (req, res) => {
         const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET);
         res.json({ user, token });
     } catch (err) {
-        console.error('Register error:', err.message);
-        console.error('Error code:', err.code);
-        console.error('Stack:', err.stack);
         if (err.code === '23505') { // Unique violation
             return res.status(400).json({ error: 'Email already exists' });
         }
+        logger.error('Register error', err, { 
+            code: err.code,
+            endpoint: 'POST /api/auth/register'
+        });
         res.status(500).json({ error: err.message || 'Registration failed' });
     }
 });
@@ -170,9 +295,10 @@ app.post('/api/auth/login', async (req, res) => {
         const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET);
         res.json({ user: { id: user.id, email: user.email }, token });
     } catch (err) {
-        console.error('Login error:', err.message);
-        console.error('Error code:', err.code);
-        console.error('Stack:', err.stack);
+        logger.error('Login error', err, { 
+            code: err.code,
+            endpoint: 'POST /api/auth/login'
+        });
         res.status(500).json({ error: err.message || 'Login failed' });
     }
 });
@@ -313,9 +439,11 @@ app.get('/api/sync', authenticateToken, async (req, res) => {
       achievements
     });
   } catch (err) {
-    console.error('Sync error:', err.message);
-    console.error('Error code:', err.code);
-    console.error('Stack:', err.stack);
+    logger.error('Sync error', err, { 
+      code: err.code,
+      endpoint: 'GET /api/sync',
+      userId: req.user?.id
+    });
     res.status(500).json({ error: err.message || 'Failed to sync data' });
   }
 });
@@ -402,11 +530,12 @@ app.post('/api/tasks', authenticateToken, async (req, res) => {
     }
     res.json({ success: true });
   } catch (err) {
-    console.error('Save task error:', err.message);
-    console.error('Error code:', err.code);
-    console.error('Task ID:', id);
-    console.error('User ID:', userId);
-    console.error('Stack:', err.stack);
+    logger.error('Save task error', err, { 
+      code: err.code,
+      endpoint: 'POST /api/tasks',
+      taskId: id,
+      userId: userId
+    });
     res.status(500).json({ error: err.message || 'Failed to save task' });
   }
 });
@@ -666,9 +795,11 @@ app.get('/api/achievements', authenticateToken, async (req, res) => {
         
         res.json(achievements);
     } catch (err) {
-        console.error('Get achievements error:', err.message);
-        console.error('Error code:', err.code);
-        console.error('Stack:', err.stack);
+        logger.error('Get achievements error', err, { 
+          code: err.code,
+          endpoint: 'GET /api/achievements',
+          userId: req.user?.id
+        });
         res.status(500).json({ error: err.message || 'Failed to get achievements' });
     }
 });
@@ -729,9 +860,11 @@ app.post('/api/achievements/check', authenticateToken, async (req, res) => {
         
         res.json({ success: true, unlocked: isUnlocked });
     } catch (err) {
-        console.error('Check achievement error:', err.message);
-        console.error('Error code:', err.code);
-        console.error('Stack:', err.stack);
+        logger.error('Check achievement error', err, { 
+          code: err.code,
+          endpoint: 'POST /api/achievements/check',
+          userId: req.user?.id
+        });
         res.status(500).json({ error: err.message || 'Failed to check achievement' });
     }
 });
@@ -758,5 +891,5 @@ app.get('*', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Beliarg Server running on port ${PORT}`);
+  logger.info(`Beliarg Server running on port ${PORT}`);
 });

@@ -403,3 +403,4 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ tasks, rituals, tran
   );
 };
 
+

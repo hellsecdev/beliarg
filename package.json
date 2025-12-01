@@ -17,7 +17,8 @@
     "bcryptjs": "^2.4.3",
     "jsonwebtoken": "^9.0.2",
     "cors": "^2.8.5",
-    "dotenv": "^16.3.1"
+    "dotenv": "^16.3.1",
+    "telegraf": "^4.16.3"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
