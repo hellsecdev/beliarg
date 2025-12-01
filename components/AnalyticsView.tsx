@@ -24,6 +24,9 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ transactions, comp
       const tasksWithoutCompletedAt = completedTasks.filter(t => !t.completedAt);
       console.log('[Heatmap] Tasks with completedAt:', tasksWithCompletedAt.length);
       console.log('[Heatmap] Tasks without completedAt (will use createdAt):', tasksWithoutCompletedAt.length);
+      if (tasksWithoutCompletedAt.length > 0) {
+        console.warn('[Heatmap] Tasks without completedAt:', tasksWithoutCompletedAt.map(t => ({ id: t.id, title: t.title, isCompleted: t.isCompleted })));
+      }
       
       // Generate last 365 days
       const days = [];

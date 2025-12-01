@@ -228,6 +228,12 @@ app.get('/api/sync', authenticateToken, async (req, res) => {
       // Convert completed_at timestamp to milliseconds
       const completedAt = task.completed_at ? new Date(task.completed_at).getTime() : undefined;
       
+      if (task.completed_at) {
+        console.log('[Sync] Task loaded with completed_at:', task.id, task.completed_at, 'converted to:', completedAt);
+      } else if (isCompleted) {
+        console.warn('[Sync] Task is completed but has no completed_at:', task.id);
+      }
+      
       return {
         id: task.id,
         title: task.title,
@@ -364,6 +370,8 @@ app.post('/api/tasks', authenticateToken, async (req, res) => {
     const deadlineTimestamp = deadline ? toTimestamp(deadline) : null;
     const completedAtTimestamp = completedAt ? toTimestamp(completedAt) : null;
     
+    console.log('[SaveTask] Task ID:', id, 'isCompleted:', isCompleted, 'completedAt:', completedAt, 'completedAtTimestamp:', completedAtTimestamp);
+    
     await client.query(`
       INSERT INTO tasks (id, user_id, title, description, original_description, deadline, difficulty, is_completed, created_at, completed_at, sigil_id)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
@@ -373,7 +381,13 @@ app.post('/api/tasks', authenticateToken, async (req, res) => {
         deadline = EXCLUDED.deadline,
         difficulty = EXCLUDED.difficulty,
         is_completed = EXCLUDED.is_completed,
-        completed_at = EXCLUDED.completed_at,
+        completed_at = CASE 
+          WHEN EXCLUDED.is_completed = true AND EXCLUDED.completed_at IS NOT NULL 
+            THEN EXCLUDED.completed_at
+          WHEN EXCLUDED.is_completed = false 
+            THEN NULL
+          ELSE tasks.completed_at
+        END,
         sigil_id = EXCLUDED.sigil_id
     `, [id, userId, title, description, originalDescription, deadlineTimestamp, difficulty, isCompleted, createdAtTimestamp, completedAtTimestamp, sigilId]);
 

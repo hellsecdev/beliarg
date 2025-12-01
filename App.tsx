@@ -495,7 +495,14 @@ const App: React.FC = () => {
 
     if (taskData.id) {
         const existing = tasks.find(t => t.id === taskData.id);
-        newTask = { ...existing!, ...finalTaskData };
+        newTask = { 
+            ...existing!, 
+            ...finalTaskData,
+            // Сохранить completedAt, если задача завершена
+            completedAt: existing?.isCompleted && !existing?.completedAt 
+                ? Date.now() // Установить текущий timestamp, если задача завершена, но completedAt отсутствует
+                : existing?.completedAt 
+        };
         setTasks(prev => prev.map(t => t.id === taskData.id ? newTask : t));
     } else {
         newTask = { ...finalTaskData, id: crypto.randomUUID(), isCompleted: false, createdAt: Date.now() };
@@ -509,6 +516,7 @@ const App: React.FC = () => {
     if (task && !task.isCompleted) {
       audioService.playChainBreak();
       const updatedTask = { ...task, isCompleted: true, completedAt: Date.now() };
+      console.log('[App] Task completed, saving with completedAt:', updatedTask.completedAt);
       setTasks(prev => prev.map(t => t.id === id ? updatedTask : t));
       setStats(prev => ({ ...prev, soulsCollected: prev.soulsCollected + 1 }));
       await storageService.saveTask(updatedTask);
