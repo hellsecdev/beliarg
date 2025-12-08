@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Ritual } from '../types';
 import { translations, Language } from '../translations';
 
@@ -10,7 +10,7 @@ interface RitualCardProps {
 }
 
 export const RitualCard: React.FC<RitualCardProps> = ({ ritual, onPerform, lang }) => {
-  const t = translations[lang];
+  const t = useMemo(() => translations[lang], [lang]);
   
   const lastPerformedDate = new Date(ritual.lastPerformed);
   const today = new Date();

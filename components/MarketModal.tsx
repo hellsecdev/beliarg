@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { PlayerStats, ParticleEffectType } from '../types';
 import { HellButton } from './HellButton';
 import { translations, Language } from '../translations';
@@ -21,7 +21,7 @@ const ITEMS: { id: ParticleEffectType, cost: number }[] = [
 ];
 
 export const MarketModal: React.FC<MarketModalProps> = ({ isOpen, onClose, stats, onUpdateStats, lang }) => {
-  const t = translations[lang];
+  const t = useMemo(() => translations[lang], [lang]);
 
   if (!isOpen) return null;
 

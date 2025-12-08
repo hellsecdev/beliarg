@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { HellButton } from './HellButton';
 import { translations, Language } from '../translations';
 
@@ -12,7 +12,7 @@ interface ConfirmationModalProps {
 }
 
 export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ isOpen, onClose, onConfirm, message, lang }) => {
-  const t = translations[lang];
+  const t = useMemo(() => translations[lang], [lang]);
 
   if (!isOpen) return null;
 

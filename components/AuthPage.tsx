@@ -1,6 +1,6 @@
 
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Language, translations } from '../translations';
 import { HellButton } from './HellButton';
 import { authService, isDemoMode } from '../services/authService';
@@ -21,7 +21,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLogin, lang, onSetLang }) 
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [demoNotice, setDemoNotice] = useState(false);
-    const t = translations[lang];
+    const t = useMemo(() => translations[lang], [lang]);
 
     // Show demo notice if in demo mode
     useEffect(() => {

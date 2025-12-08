@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Altar } from '../types';
 import { translations, Language } from '../translations';
 import { HellButton } from './HellButton';
@@ -12,7 +12,7 @@ interface AltarCardProps {
 }
 
 export const AltarCard: React.FC<AltarCardProps> = ({ altar, onContribute, currentGold, lang }) => {
-  const t = translations[lang];
+  const t = useMemo(() => translations[lang], [lang]);
   const [amount, setAmount] = useState('');
   
   const progress = Math.min(100, (altar.currentAmount / altar.targetAmount) * 100);

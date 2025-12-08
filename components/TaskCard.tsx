@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { Task, Difficulty, Sigil } from '../types';
 import { HellButton } from './HellButton';
 import { translations, Language } from '../translations';
@@ -24,7 +24,7 @@ const difficultyColor = {
 
 export const TaskCard: React.FC<TaskCardProps> = ({ task, sigil, onComplete, onDelete, onEdit, onToggleSubtask, isHistoryView = false, isDraggable = false, lang }) => {
   const isOverdue = !task.isCompleted && new Date(task.deadline).getTime() < Date.now();
-  const t = translations[lang];
+  const t = useMemo(() => translations[lang], [lang]);
   const subtasks = task.subtasks || [];
   const completedSubtasks = subtasks.filter(s => s.isCompleted).length;
   const progress = subtasks.length > 0 ? (completedSubtasks / subtasks.length) * 100 : 0;

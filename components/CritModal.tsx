@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { translations, Language } from '../translations';
 
 interface CritModalProps {
@@ -9,7 +9,7 @@ interface CritModalProps {
 }
 
 export const CritModal: React.FC<CritModalProps> = ({ isOpen, onClose, lang }) => {
-  const t = translations[lang];
+  const t = useMemo(() => translations[lang], [lang]);
 
   useEffect(() => {
     if (isOpen) {

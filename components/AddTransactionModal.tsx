@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Transaction, TransactionType, Sigil } from '../types';
 import { HellButton } from './HellButton';
 import { translations, Language } from '../translations';
@@ -36,7 +36,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen
   const [newSigilColor, setNewSigilColor] = useState(SIGIL_COLORS[0].hex);
 
   const dateInputRef = useRef<HTMLInputElement>(null);
-  const t = translations[lang];
+  const t = useMemo(() => translations[lang], [lang]);
 
   useEffect(() => {
       if (isOpen) {

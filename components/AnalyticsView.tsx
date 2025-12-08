@@ -14,7 +14,7 @@ interface AnalyticsViewProps {
 }
 
 export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ transactions, completedTasks, rituals, notes, achievements, lang }) => {
-  const t = translations[lang];
+  const t = useMemo(() => translations[lang], [lang]);
   
   // --- HEATMAP LOGIC ---
   const heatmapData = useMemo(() => {

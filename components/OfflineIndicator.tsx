@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Language } from '../types';
 import { translations } from '../translations';
 
@@ -10,7 +10,7 @@ interface OfflineIndicatorProps {
 }
 
 export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({ isOnline, isSyncing, lang }) => {
-  const t = translations[lang];
+  const t = useMemo(() => translations[lang], [lang]);
 
   if (isOnline && !isSyncing) {
     return null; // Don't show anything when online and not syncing

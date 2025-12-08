@@ -20,7 +20,7 @@ interface DayData {
 }
 
 export const CalendarView: React.FC<CalendarViewProps> = ({ tasks, rituals, transactions, notes, lang }) => {
-  const t = translations[lang];
+  const t = useMemo(() => translations[lang], [lang]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
 

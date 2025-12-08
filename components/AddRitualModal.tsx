@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { HellButton } from './HellButton';
 import { translations, Language } from '../translations';
 
@@ -12,7 +12,7 @@ interface AddRitualModalProps {
 
 export const AddRitualModal: React.FC<AddRitualModalProps> = ({ isOpen, onClose, onSave, lang }) => {
   const [title, setTitle] = useState('');
-  const t = translations[lang];
+  const t = useMemo(() => translations[lang], [lang]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

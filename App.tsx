@@ -77,7 +77,8 @@ const App: React.FC = () => {
   
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
 
-  const t = translations[lang];
+  // Memoize translations to ensure they update when lang changes
+  const t = useMemo(() => translations[lang], [lang]);
 
   // --- Initialization ---
 
@@ -135,8 +136,9 @@ const App: React.FC = () => {
         setLang(savedLang);
       } else {
         // Default to English if no saved language or invalid
-        setLang('en');
-        localStorage.setItem('beliarg_lang', 'en');
+        const defaultLang: Language = 'en';
+        setLang(defaultLang);
+        localStorage.setItem('beliarg_lang', defaultLang);
       }
       if (savedTheme) setTheme(savedTheme);
   }, []);

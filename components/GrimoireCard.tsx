@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Note, Sigil } from '../types';
 import { translations, Language } from '../translations';
 
@@ -12,7 +12,7 @@ interface GrimoireCardProps {
 }
 
 export const GrimoireCard: React.FC<GrimoireCardProps> = ({ note, sigil, onEdit, onDelete, lang }) => {
-  const t = translations[lang];
+  const t = useMemo(() => translations[lang], [lang]);
   return (
     <div className="group relative bg-bg-panel border border-hell-700 p-4 transition-all hover:border-hell-gold hover:bg-hell-800/20 shadow-sm flex flex-col h-full">
       {/* Decorative 'Paper' feel */}

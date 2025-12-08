@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Achievement } from '../types';
 import { translations, Language } from '../translations';
 
@@ -99,7 +99,7 @@ const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
 ];
 
 export const AchievementsView: React.FC<AchievementsViewProps> = ({ achievements, lang }) => {
-  const t = translations[lang];
+  const t = useMemo(() => translations[lang], [lang]);
 
   console.log('[AchievementsView] Received achievements:', achievements.length, achievements);
 

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { translations, Language } from '../translations';
 import { Theme, User } from '../types';
 import { authService } from '../services/authService';
@@ -18,7 +18,7 @@ interface SettingsModalProps {
 export const SettingsModal: React.FC<SettingsModalProps> = ({ 
   isOpen, onClose, lang, theme, onSetLang, onSetTheme, user 
 }) => {
-  const t = translations[lang];
+  const t = useMemo(() => translations[lang], [lang]);
 
   if (!isOpen) return null;
 

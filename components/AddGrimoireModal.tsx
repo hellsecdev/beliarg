@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Note, Sigil } from '../types';
 import { HellButton } from './HellButton';
 import { translations, Language } from '../translations';
@@ -32,7 +32,7 @@ export const AddGrimoireModal: React.FC<AddGrimoireModalProps> = ({ isOpen, onCl
   const [newSigilName, setNewSigilName] = useState('');
   const [newSigilColor, setNewSigilColor] = useState(SIGIL_COLORS[0].hex);
 
-  const t = translations[lang];
+  const t = useMemo(() => translations[lang], [lang]);
 
   useEffect(() => {
     if (isOpen) {
