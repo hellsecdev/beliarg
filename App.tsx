@@ -214,9 +214,9 @@ const App: React.FC = () => {
     setHistoryPage(1);
   }, [searchQuery]);
 
+  // Save and apply theme changes
   useEffect(() => {
     localStorage.setItem('beliarg_theme', theme);
-    localStorage.setItem('beliarg_lang', lang);
     
     const html = document.documentElement;
     if (theme === 'dark') {
@@ -226,7 +226,13 @@ const App: React.FC = () => {
       html.setAttribute('data-theme', 'light');
       html.classList.remove('dark');
     }
+  }, [theme]);
 
+  // Save and apply language changes
+  useEffect(() => {
+    localStorage.setItem('beliarg_lang', lang);
+    
+    const html = document.documentElement;
     if (lang === 'he') {
       html.setAttribute('dir', 'rtl');
       html.lang = 'he';
@@ -234,8 +240,7 @@ const App: React.FC = () => {
       html.setAttribute('dir', 'ltr');
       html.lang = lang;
     }
-
-  }, [theme, lang]);
+  }, [lang]);
 
   // Online/Offline event listeners
   useEffect(() => {
