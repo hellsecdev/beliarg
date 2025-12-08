@@ -2,7 +2,9 @@
 
 > "Exure vivos donec sol taceat" — Burn the living until the sun falls silent.
 
-**Beliarg** is a dark, gamified productivity and finance management ecosystem. 
+**Beliarg** is a dark, gamified productivity and finance management ecosystem.
+
+**This is an open source project** — free to use, modify, and distribute. 
 
 It has been reforged into a **Full-Stack Web Application (PWA)**. It combines a **React 19** frontend (built with Vite) with a **Node.js & PostgreSQL** backend to ensure your data survives even the apocalypse.
 
@@ -371,4 +373,12 @@ If you see "permission denied for schema public" or "must be owner of table":
 
 ## 📄 License
 
-This project is proprietary. All rights reserved.
+This project is **open source** and available under a **free open source license**. 
+
+You are free to:
+- Use the software for any purpose
+- Modify the source code
+- Distribute the software
+- Contribute to the project
+
+**Developed with 🔥 by [D371L](https://github.com/D371L)**
