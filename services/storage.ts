@@ -30,10 +30,23 @@ const handleResponse = async (res: Response): Promise<any> => {
         throw new AuthenticationError('Authentication failed. Please login again.');
     }
     if (!res.ok) {
-        const error = await res.json().catch(() => ({ error: 'Server error' }));
-        throw new Error(error.error || 'Server error');
+        // Try to parse as JSON, but handle HTML responses (like 404 pages)
+        const contentType = res.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            const error = await res.json().catch(() => ({ error: 'Server error' }));
+            throw new Error(error.error || 'Server error');
+        } else {
+            const errorText = await res.text();
+            throw new Error(`Server error: ${res.status} ${errorText.substring(0, 100)}`);
+        }
     }
-    return await res.json();
+    const contentType = res.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+        return await res.json();
+    } else {
+        const text = await res.text();
+        throw new Error(`Expected JSON but got: ${text.substring(0, 100)}`);
+    }
 };
 
 export const storageService = {

@@ -49,18 +49,39 @@ export const authService = {
             throw new Error('Registration is not available in demo mode');
         }
 
-        const res = await fetch(`${API_URL}/auth/register`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password })
-        });
+        let data;
+        try {
+            const res = await fetch(`${API_URL}/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
 
-        if (!res.ok) {
-            const err = await res.json();
-            throw new Error(err.error || 'Registration failed');
+            if (!res.ok) {
+                const contentType = res.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    const err = await res.json();
+                    throw new Error(err.error || 'Registration failed');
+                } else {
+                    const errorText = await res.text();
+                    throw new Error(`Registration failed: ${res.status}. ${errorText.substring(0, 100)}`);
+                }
+            }
+
+            const contentType = res.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await res.text();
+                throw new Error(`Expected JSON but got: ${text.substring(0, 100)}`);
+            }
+            
+            data = await res.json();
+        } catch (error: any) {
+            // If fetch fails (network error, CORS, etc.), provide helpful message
+            if (error.message && error.message.includes('fetch')) {
+                throw new Error('Cannot connect to server. Please check your connection.');
+            }
+            throw error;
         }
-
-        const data = await res.json();
         this.setToken(data.token);
         setDemoMode(false);
         return data;
@@ -81,15 +102,29 @@ export const authService = {
         }
 
         // Regular login
-        const res = await fetch(`${API_URL}/auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password })
-        });
+        try {
+            const res = await fetch(`${API_URL}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
 
-        if (!res.ok) {
-            const err = await res.json();
-            throw new Error(err.error || 'Login failed');
+            if (!res.ok) {
+                const contentType = res.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    const err = await res.json();
+                    throw new Error(err.error || 'Login failed');
+                } else {
+                    const errorText = await res.text();
+                    throw new Error(`Login failed: ${res.status}. ${errorText.substring(0, 100)}`);
+                }
+            }
+        } catch (error: any) {
+            // If fetch fails (network error, CORS, etc.), provide helpful message
+            if (error.message && error.message.includes('fetch')) {
+                throw new Error('Cannot connect to server. Are you using demo mode? Try: admin@demo.local / admin');
+            }
+            throw error;
         }
 
         const data = await res.json();
