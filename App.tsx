@@ -56,7 +56,7 @@ const App: React.FC = () => {
   const [historyPage, setHistoryPage] = useState(1);
 
   // Settings State
-  const [lang, setLang] = useState<Language>('ru');
+  const [lang, setLang] = useState<Language>('en');
   const [theme, setTheme] = useState<Theme>('dark');
   
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
@@ -131,7 +131,13 @@ const App: React.FC = () => {
       // Load local preferences
       const savedLang = localStorage.getItem('beliarg_lang') as Language;
       const savedTheme = localStorage.getItem('beliarg_theme') as Theme;
-      if (savedLang) setLang(savedLang);
+      if (savedLang && ['ru', 'en', 'he'].includes(savedLang)) {
+        setLang(savedLang);
+      } else {
+        // Default to English if no saved language or invalid
+        setLang('en');
+        localStorage.setItem('beliarg_lang', 'en');
+      }
       if (savedTheme) setTheme(savedTheme);
   }, []);
 
