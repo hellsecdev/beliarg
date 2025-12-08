@@ -102,6 +102,7 @@ export const authService = {
         }
 
         // Regular login
+        let data;
         try {
             const res = await fetch(`${API_URL}/auth/login`, {
                 method: 'POST',
@@ -119,6 +120,14 @@ export const authService = {
                     throw new Error(`Login failed: ${res.status}. ${errorText.substring(0, 100)}`);
                 }
             }
+
+            const contentType = res.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await res.text();
+                throw new Error(`Expected JSON but got: ${text.substring(0, 100)}`);
+            }
+
+            data = await res.json();
         } catch (error: any) {
             // If fetch fails (network error, CORS, etc.), provide helpful message
             if (error.message && error.message.includes('fetch')) {
@@ -127,7 +136,6 @@ export const authService = {
             throw error;
         }
 
-        const data = await res.json();
         this.setToken(data.token);
         setDemoMode(false);
         return data;
