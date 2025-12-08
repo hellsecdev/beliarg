@@ -2,6 +2,32 @@
 import { User } from '../types';
 
 const API_URL = '/api';
+const DEMO_MODE_KEY = 'beliarg_demo_mode';
+
+// Check if we're in demo mode
+export const isDemoMode = (): boolean => {
+    return localStorage.getItem(DEMO_MODE_KEY) === 'true';
+};
+
+// Set demo mode
+export const setDemoMode = (enabled: boolean) => {
+    if (enabled) {
+        localStorage.setItem(DEMO_MODE_KEY, 'true');
+    } else {
+        localStorage.removeItem(DEMO_MODE_KEY);
+    }
+};
+
+// Generate a simple demo token (not a real JWT, just for demo)
+const generateDemoToken = (): string => {
+    const payload = {
+        id: 'demo-user',
+        email: 'admin@demo.local',
+        demo: true
+    };
+    // Simple base64 encoding (not secure, just for demo)
+    return 'demo.' + btoa(JSON.stringify(payload)) + '.token';
+};
 
 export const authService = {
     getToken(): string | null {
@@ -14,9 +40,15 @@ export const authService = {
 
     clearToken() {
         localStorage.removeItem('beliarg_token');
+        setDemoMode(false);
     },
 
     async register(email: string, password: string): Promise<{ user: User, token: string }> {
+        // In demo mode, registration is not available
+        if (isDemoMode()) {
+            throw new Error('Registration is not available in demo mode');
+        }
+
         const res = await fetch(`${API_URL}/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -30,10 +62,25 @@ export const authService = {
 
         const data = await res.json();
         this.setToken(data.token);
+        setDemoMode(false);
         return data;
     },
 
     async login(email: string, password: string): Promise<{ user: User, token: string }> {
+        // Check for demo mode (admin/admin)
+        if (email === 'admin' && password === 'admin') {
+            const demoToken = generateDemoToken();
+            const demoUser: User = {
+                id: 'demo-user',
+                email: 'admin@demo.local',
+                name: 'Demo Admin'
+            };
+            this.setToken(demoToken);
+            setDemoMode(true);
+            return { user: demoUser, token: demoToken };
+        }
+
+        // Regular login
         const res = await fetch(`${API_URL}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -47,6 +94,7 @@ export const authService = {
 
         const data = await res.json();
         this.setToken(data.token);
+        setDemoMode(false);
         return data;
     },
 

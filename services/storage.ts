@@ -1,6 +1,7 @@
 
 import { Task, Transaction, Note, Ritual, Sigil, Theme, Language } from '../types';
-import { authService } from './authService';
+import { authService, isDemoMode } from './authService';
+import { demoStorage } from './demoStorage';
 
 const USE_BACKEND = true; 
 const API_URL = '/api';
@@ -37,6 +38,11 @@ const handleResponse = async (res: Response): Promise<any> => {
 
 export const storageService = {
     async loadAllData() {
+        // Check if we're in demo mode
+        if (isDemoMode()) {
+            return demoStorage.loadAllData();
+        }
+
         if (USE_BACKEND) {
             try {
                 const token = authService.getToken();
@@ -87,6 +93,10 @@ export const storageService = {
     },
 
     async saveTask(task: Task) {
+        if (isDemoMode()) {
+            return demoStorage.saveTask(task);
+        }
+
         if (USE_BACKEND) {
             try {
                 const res = await fetch(`${API_URL}/tasks`, {
@@ -103,6 +113,10 @@ export const storageService = {
     },
 
     async deleteTask(id: string) {
+        if (isDemoMode()) {
+            return demoStorage.deleteTask(id);
+        }
+
         if (USE_BACKEND) {
             try {
                 const res = await fetch(`${API_URL}/tasks/${id}`, { 
@@ -118,6 +132,10 @@ export const storageService = {
     },
 
     async saveTransaction(trans: Transaction) {
+        if (isDemoMode()) {
+            return demoStorage.saveTransaction(trans);
+        }
+
         if (USE_BACKEND) {
             try {
                 const res = await fetch(`${API_URL}/transactions`, {
@@ -134,6 +152,10 @@ export const storageService = {
     },
 
     async deleteTransaction(id: string) {
+        if (isDemoMode()) {
+            return demoStorage.deleteTransaction(id);
+        }
+
         if (USE_BACKEND) {
             try {
                 const res = await fetch(`${API_URL}/transactions/${id}`, { 
@@ -149,6 +171,10 @@ export const storageService = {
     },
 
     async saveNote(note: Note) {
+        if (isDemoMode()) {
+            return demoStorage.saveNote(note);
+        }
+
         if (USE_BACKEND) {
             try {
                 const res = await fetch(`${API_URL}/notes`, {
@@ -165,6 +191,10 @@ export const storageService = {
     },
 
     async deleteNote(id: string) {
+        if (isDemoMode()) {
+            return demoStorage.deleteNote(id);
+        }
+
         if (USE_BACKEND) {
             try {
                 const res = await fetch(`${API_URL}/notes/${id}`, { 
@@ -180,6 +210,10 @@ export const storageService = {
     },
 
     async saveRitual(ritual: Ritual) {
+        if (isDemoMode()) {
+            return demoStorage.saveRitual(ritual);
+        }
+
         if (USE_BACKEND) {
             try {
                 const res = await fetch(`${API_URL}/rituals`, {
@@ -196,6 +230,10 @@ export const storageService = {
     },
 
     async saveSigil(sigil: Sigil) {
+        if (isDemoMode()) {
+            return demoStorage.saveSigil(sigil);
+        }
+
         if (USE_BACKEND) {
             try {
                 const res = await fetch(`${API_URL}/sigils`, {

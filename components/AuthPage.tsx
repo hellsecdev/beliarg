@@ -1,9 +1,9 @@
 
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Language, translations } from '../translations';
 import { HellButton } from './HellButton';
-import { authService } from '../services/authService';
+import { authService, isDemoMode } from '../services/authService';
 import { User } from '../types';
 import { BeliargSeal } from './BeliarghSeal';
 
@@ -20,7 +20,16 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLogin, lang, onSetLang }) 
     const [confirmPassword, setConfirmPassword] = useState(''); // Added for registration
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [demoNotice, setDemoNotice] = useState(false);
     const t = translations[lang];
+
+    // Show demo notice if in demo mode
+    useEffect(() => {
+        if (isDemoMode()) {
+            setDemoNotice(true);
+            setTimeout(() => setDemoNotice(false), 5000);
+        }
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -38,6 +47,11 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLogin, lang, onSetLang }) 
             let data;
             if (isLogin) {
                 data = await authService.login(email, password);
+                // Show demo notice if logged in with admin/admin
+                if (email === 'admin' && password === 'admin') {
+                    setDemoNotice(true);
+                    setTimeout(() => setDemoNotice(false), 5000);
+                }
             } else {
                 data = await authService.register(email, password);
             }
@@ -100,6 +114,11 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLogin, lang, onSetLang }) 
                      </div>
 
                      <form onSubmit={handleSubmit} className="space-y-5">
+                         {demoNotice && (
+                             <div className="bg-hell-gold/20 border border-hell-gold p-3 text-hell-gold text-xs text-center font-bold">
+                                 🔥 ДЕМО-РЕЖИМ: Вы вошли с тестовыми данными. Изменения сохраняются локально.
+                             </div>
+                         )}
                          {error && (
                              <div className="bg-red-900/20 border border-red-600 p-2 text-red-500 text-xs text-center font-bold">
                                  {error}

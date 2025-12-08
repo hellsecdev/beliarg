@@ -254,13 +254,47 @@ To run as a single monolith (Server serving the Frontend):
 
 ## ☁️ Deployment Guide
 
-### Production Deployment
+### GitHub Pages Demo (No Database Required)
 
-The application is deployed at **https://beliarg.online**
+The application is available as a **demo version on GitHub Pages** with pre-loaded test data.
+
+**🌐 Live Demo:** [https://d371l.github.io/beliarg/](https://d371l.github.io/beliarg/)
+
+**Demo Access:**
+- **Username:** `admin`
+- **Password:** `admin`
+
+The demo version works entirely in the browser using localStorage - no backend or database required. All changes are saved locally in your browser. This is perfect for exploring the application's features without any setup.
+
+**Note:** The demo version includes sample data (tasks, achievements, finances, rituals, notes) to showcase all features. You can modify, add, or delete items, and changes will persist in your browser's localStorage.
+
+### Production Deployment (With Database)
+
+The application is also deployed at **https://beliarg.online** with full backend and database support.
 
 For detailed deployment instructions, see [DEPLOYMENT.md](./DEPLOYMENT.md)
 
-### Quick Deployment Steps
+### Setting Up Database (For Production)
+
+To use the application with a real database:
+
+1.  **Database Setup:** Create a PostgreSQL database and run the schema:
+    ```bash
+    psql -U postgres -d beliarg_db -f sql/schema.sql
+    psql -U postgres -d beliarg_db -f sql/create_achievements_table.sql
+    psql -U postgres -d beliarg_db -f sql/add_oauth_fields_to_users.sql
+    ```
+
+2.  **Configuration:** Set up your `.env` file with database connection:
+    ```env
+    DATABASE_URL=postgresql://user:password@localhost:5432/beliarg_db
+    JWT_SECRET=your_secret_key
+    TELEGRAM_BOT_TOKEN=your_telegram_bot_token
+    ```
+
+3.  **Run:** Start the server with `npm start` or use PM2 for production.
+
+### Quick Deployment Steps (Production Server)
 
 1.  **Provision:** Get an Ubuntu server (tested on Ubuntu 24.04).
 2.  **Install:** `sudo apt install postgresql nodejs npm nginx certbot`.

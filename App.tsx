@@ -89,6 +89,19 @@ const App: React.FC = () => {
           // For now, assume if token exists we try to load data. 
           // Ideally we decode JWT to get email for UI.
           try {
+              // Check if it's a demo token
+              if (token.startsWith('demo.')) {
+                  const parts = token.split('.');
+                  if (parts.length === 3) {
+                      const payload = JSON.parse(atob(parts[1]));
+                      if (payload.id && payload.email) {
+                          setUser({ id: payload.id, email: payload.email, name: payload.name });
+                          setIsLoading(false);
+                          return;
+                      }
+                  }
+              }
+              
               // Validate JWT format (should have 3 parts separated by dots)
               if (!token || typeof token !== 'string' || token.split('.').length !== 3) {
                   throw new Error('Invalid token format');
