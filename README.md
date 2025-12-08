@@ -401,12 +401,8 @@ If you see "permission denied for schema public" or "must be owner of table":
 
 ## 📄 License
 
-This project is **open source** and available under a **free open source license**. 
+This project is **open source** and available under the **MIT License**.
 
-You are free to:
-- Use the software for any purpose
-- Modify the source code
-- Distribute the software
-- Contribute to the project
+See the [LICENSE](./LICENSE) file for the full text of the license.
 
 **Developed with 🔥 by [D371L](https://github.com/D371L)**
