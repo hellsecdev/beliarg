@@ -365,12 +365,6 @@ If you see "permission denied for schema public" or "must be owner of table":
 
 ---
 
-## 👨‍💻 Credits
-
-**Developed with 🔥 by [D371L](https://github.com/D371L)**
-
----
-
 ## 📄 License
 
 This project is **open source** and available under a **free open source license**. 
