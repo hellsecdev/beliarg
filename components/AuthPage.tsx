@@ -48,7 +48,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLogin, lang, onSetLang }) 
             if (isLogin) {
                 data = await authService.login(email, password);
                 // Show demo notice if logged in with admin/admin
-                if (email === 'admin' && password === 'admin') {
+                if ((email === 'admin' || email === 'admin@demo.local') && password === 'admin') {
                     setDemoNotice(true);
                     setTimeout(() => setDemoNotice(false), 5000);
                 }

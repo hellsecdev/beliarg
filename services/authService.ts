@@ -67,8 +67,8 @@ export const authService = {
     },
 
     async login(email: string, password: string): Promise<{ user: User, token: string }> {
-        // Check for demo mode (admin/admin)
-        if (email === 'admin' && password === 'admin') {
+        // Check for demo mode (admin/admin or admin@demo.local/admin)
+        if ((email === 'admin' || email === 'admin@demo.local') && password === 'admin') {
             const demoToken = generateDemoToken();
             const demoUser: User = {
                 id: 'demo-user',

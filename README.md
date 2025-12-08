@@ -261,7 +261,7 @@ The application is available as a **demo version on GitHub Pages** with pre-load
 **🌐 Live Demo:** [https://d371l.github.io/beliarg/](https://d371l.github.io/beliarg/)
 
 **Demo Access:**
-- **Username:** `admin`
+- **Email:** `admin@demo.local` (или просто `admin`)
 - **Password:** `admin`
 
 The demo version works entirely in the browser using localStorage - no backend or database required. All changes are saved locally in your browser. This is perfect for exploring the application's features without any setup.
