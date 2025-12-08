@@ -42,8 +42,8 @@ It features a unique "Hellish" aesthetic, turning daily tasks into "Chains", exp
 - **Month Navigation:** Navigate between months to view historical and future events.
 - **Smart Filtering:** Only displays events from the currently selected month.
 
-### 📊 Суд (Analytics & Statistics)
-- **Activity Heatmap (Пекло Активности):** Visualize your productivity activity over the last 365 days with an interactive heatmap.
+### 📊 Analytics & Statistics
+- **Activity Heatmap:** Visualize your productivity activity over the last 365 days with an interactive heatmap.
   - Color intensity shows activity level (dark = no activity, gold = high activity)
   - Tracks completed tasks by date
   - Persists data across page refreshes
@@ -261,7 +261,7 @@ The application is available as a **demo version on GitHub Pages** with pre-load
 **🌐 Live Demo:** [https://d371l.github.io/beliarg/](https://d371l.github.io/beliarg/)
 
 **Demo Access:**
-- **Email:** `admin@demo.local` (или просто `admin`)
+- **Email:** `admin@demo.local` (or simply `admin`)
 - **Password:** `admin`
 
 The demo version works entirely in the browser using localStorage - no backend or database required. All changes are saved locally in your browser. This is perfect for exploring the application's features without any setup.

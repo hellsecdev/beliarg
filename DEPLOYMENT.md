@@ -1,44 +1,44 @@
 # Beliarg Deployment Guide
 
-Этот документ описывает процесс деплоя приложения Beliarg на production сервер.
+This document describes the process of deploying the Beliarg application to a production server.
 
-## Подготовка к деплою
+## Preparation for Deployment
 
-### Что было исправлено в коде:
+### What Was Fixed in the Code:
 
-1. ✅ Добавлены серверные зависимости в `package.json`
-2. ✅ Конвертирован `server/server.js` из CommonJS в ES modules
-3. ✅ Исправлены захардкоженные API_URL на относительные пути
-4. ✅ Добавлена раздача статики из папки `dist` и SPA fallback
-5. ✅ Добавлен скрипт `start` в package.json
-6. ✅ Создана конфигурация PM2 (`ecosystem.config.js`)
-7. ✅ Создана конфигурация Nginx (`nginx/beliarg.conf`)
-8. ✅ Создан скрипт автоматизации деплоя (`deploy.sh`)
+1. ✅ Added server dependencies to `package.json`
+2. ✅ Converted `server/server.js` from CommonJS to ES modules
+3. ✅ Fixed hardcoded API_URL to relative paths
+4. ✅ Added static file serving from `dist` folder and SPA fallback
+5. ✅ Added `start` script to package.json
+6. ✅ Created PM2 configuration (`ecosystem.config.js`)
+7. ✅ Created Nginx configuration (`nginx/beliarg.conf`)
+8. ✅ Created deployment automation script (`deploy.sh`)
 
-## Информация о сервере
+## Server Information
 
-- **IP адрес:** 164.90.136.126
-- **Пользователь:** root
-- **Домен:** beliarg.online, www.beliarg.online
-- **Директория приложения:** /var/www/beliarg
+- **IP Address:** 164.90.136.126
+- **User:** root
+- **Domain:** beliarg.online, www.beliarg.online
+- **Application Directory:** /var/www/beliarg
 
-## Ручной деплой (пошагово)
+## Manual Deployment (Step by Step)
 
-### 1. Подключение к серверу
+### 1. Connect to Server
 
 ```bash
 ssh root@164.90.136.126
 ```
 
-### 2. Установка Node.js (если не установлен)
+### 2. Install Node.js (if not installed)
 
 ```bash
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt-get install -y nodejs
-node --version  # Должна быть версия 18+
+node --version  # Should be version 18+
 ```
 
-### 3. Установка PostgreSQL
+### 3. Install PostgreSQL
 
 ```bash
 sudo apt-get update
@@ -47,13 +47,13 @@ sudo systemctl start postgresql
 sudo systemctl enable postgresql
 ```
 
-### 4. Настройка базы данных
+### 4. Database Setup
 
 ```bash
 sudo -u postgres psql
 ```
 
-В psql консоли:
+In psql console:
 
 ```sql
 CREATE DATABASE beliarg_db;
@@ -63,21 +63,21 @@ ALTER USER beliarg_user CREATEDB;
 \q
 ```
 
-### 5. Применение схемы базы данных
+### 5. Apply Database Schema
 
 ```bash
 cd /var/www/beliarg
 sudo -u postgres psql -d beliarg_db -f sql/schema.sql
 ```
 
-### 6. Создание .env файла
+### 6. Create .env File
 
 ```bash
 cd /var/www/beliarg
 nano .env
 ```
 
-Содержимое `.env`:
+`.env` contents:
 
 ```env
 PORT=3000
@@ -85,13 +85,13 @@ DATABASE_URL=postgresql://beliarg_user:your_secure_password_here@localhost:5432/
 JWT_SECRET=$(openssl rand -base64 32)
 ```
 
-**Важно:** Замените `your_secure_password_here` на реальный пароль и сгенерируйте JWT_SECRET:
+**Important:** Replace `your_secure_password_here` with a real password and generate JWT_SECRET:
 
 ```bash
 openssl rand -base64 32
 ```
 
-### 7. Установка зависимостей и сборка
+### 7. Install Dependencies and Build
 
 ```bash
 cd /var/www/beliarg
@@ -99,7 +99,7 @@ npm install
 npm run build
 ```
 
-### 8. Установка и настройка PM2
+### 8. Install and Configure PM2
 
 ```bash
 npm install -g pm2
@@ -107,40 +107,40 @@ mkdir -p /var/www/beliarg/logs
 cd /var/www/beliarg
 pm2 start ecosystem.config.cjs
 pm2 save
-pm2 startup  # Следуйте инструкциям для автозапуска
+pm2 startup  # Follow instructions for auto-start
 ```
 
-### 9. Установка и настройка Nginx
+### 9. Install and Configure Nginx
 
 ```bash
 sudo apt-get install -y nginx
 sudo cp /var/www/beliarg/nginx/beliarg.conf /etc/nginx/sites-available/beliarg
 sudo ln -s /etc/nginx/sites-available/beliarg /etc/nginx/sites-enabled/
 sudo rm -f /etc/nginx/sites-enabled/default
-sudo nginx -t  # Проверка конфигурации
+sudo nginx -t  # Configuration check
 sudo systemctl reload nginx
 ```
 
-### 10. Настройка SSL (Let's Encrypt)
+### 10. SSL Setup (Let's Encrypt)
 
 ```bash
 sudo apt-get install -y certbot python3-certbot-nginx
 sudo certbot --nginx -d beliarg.online -d www.beliarg.online
 ```
 
-После получения сертификата, обновите `/etc/nginx/sites-available/beliarg`:
-- Раскомментируйте блок SSL (443 порт)
-- Раскомментируйте редирект с HTTP на HTTPS в блоке порта 80
-- Закомментируйте proxy_pass в блоке порта 80
+After obtaining the certificate, update `/etc/nginx/sites-available/beliarg`:
+- Uncomment the SSL block (port 443)
+- Uncomment the HTTP to HTTPS redirect in port 80 block
+- Comment out proxy_pass in port 80 block
 
-Затем:
+Then:
 
 ```bash
 sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-### 11. Настройка Firewall
+### 11. Firewall Configuration
 
 ```bash
 sudo ufw allow 22/tcp
@@ -149,68 +149,67 @@ sudo ufw allow 443/tcp
 sudo ufw --force enable
 ```
 
-## Автоматический деплой
+## Automatic Deployment
 
-Используйте скрипт `deploy.sh`:
+Use the `deploy.sh` script:
 
 ```bash
 ./deploy.sh
 ```
 
-**Внимание:** Скрипт требует интерактивного ввода для некоторых шагов (создание .env, настройка SSL).
+**Note:** The script requires interactive input for some steps (creating .env, SSL setup).
 
-## Проверка работы
+## Verification
 
-1. Проверьте статус PM2:
+1. Check PM2 status:
    ```bash
    pm2 status
    pm2 logs beliarg
    ```
 
-2. Проверьте Nginx:
+2. Check Nginx:
    ```bash
    sudo systemctl status nginx
    ```
 
-3. Проверьте доступность:
+3. Check accessibility:
    - HTTP: http://beliarg.online
-   - HTTPS: https://beliarg.online (после настройки SSL)
+   - HTTPS: https://beliarg.online (after SSL setup)
 
-## Обновление приложения
+## Application Updates
 
 ```bash
-# На сервере
+# On server
 cd /var/www/beliarg
-git pull  # Если используете git
-# Или загрузите новые файлы через rsync/scp
+git pull  # If using git
+# Or upload new files via rsync/scp
 npm install
 npm run build
 pm2 restart beliarg
 ```
 
-## Логи
+## Logs
 
-- PM2 логи: `pm2 logs beliarg`
-- Nginx логи: `/var/log/nginx/access.log` и `/var/log/nginx/error.log`
-- PM2 файлы логов: `/var/www/beliarg/logs/`
+- PM2 logs: `pm2 logs beliarg`
+- Nginx logs: `/var/log/nginx/access.log` and `/var/log/nginx/error.log`
+- PM2 log files: `/var/www/beliarg/logs/`
 
-## Устранение проблем
+## Troubleshooting
 
-### Приложение не запускается
+### Application Not Starting
 
-1. Проверьте логи: `pm2 logs beliarg`
-2. Проверьте .env файл
-3. Проверьте подключение к БД: `psql -U beliarg_user -d beliarg_db`
+1. Check logs: `pm2 logs beliarg`
+2. Check .env file
+3. Check database connection: `psql -U beliarg_user -d beliarg_db`
 
-### Nginx не проксирует запросы
+### Nginx Not Proxying Requests
 
-1. Проверьте конфигурацию: `sudo nginx -t`
-2. Проверьте, что приложение слушает порт 3000: `pm2 logs beliarg`
-3. Проверьте логи Nginx: `sudo tail -f /var/log/nginx/error.log`
+1. Check configuration: `sudo nginx -t`
+2. Check that application is listening on port 3000: `pm2 logs beliarg`
+3. Check Nginx logs: `sudo tail -f /var/log/nginx/error.log`
 
-### Проблемы с SSL
+### SSL Issues
 
-1. Убедитесь, что домен указывает на IP сервера
-2. Проверьте, что порты 80 и 443 открыты
-3. Проверьте сертификат: `sudo certbot certificates`
-
+1. Make sure the domain points to the server IP
+2. Check that ports 80 and 443 are open
+3. Check certificate: `sudo certbot certificates`

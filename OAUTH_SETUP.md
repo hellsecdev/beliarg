@@ -1,106 +1,106 @@
-# Настройка Telegram аутентификации
+# Telegram Authentication Setup
 
-Этот документ описывает процесс настройки аутентификации через Telegram для приложения Beliarg.
+This document describes the process of setting up Telegram authentication for the Beliarg application.
 
-## Содержание
+## Table of Contents
 
-1. [Настройка Telegram Bot Authentication](#настройка-telegram-bot-authentication)
-2. [Применение миграции базы данных](#применение-миграции-базы-данных)
+1. [Telegram Bot Authentication Setup](#telegram-bot-authentication-setup)
+2. [Database Migration](#database-migration)
 
-## Настройка Telegram Bot Authentication
+## Telegram Bot Authentication Setup
 
-### Шаг 1: Создание Telegram бота
+### Step 1: Create a Telegram Bot
 
-1. Откройте Telegram и найдите [@BotFather](https://t.me/BotFather)
-2. Отправьте команду `/newbot`
-3. Следуйте инструкциям:
-   - Введите имя бота (например: "Beliarg Auth Bot")
-   - Введите username бота (должен заканчиваться на `bot`, например: `beliarg_auth_bot`)
-4. После создания вы получите **Bot Token** - сохраните его!
+1. Open Telegram and find [@BotFather](https://t.me/BotFather)
+2. Send the `/newbot` command
+3. Follow the instructions:
+   - Enter the bot name (e.g., "Beliarg Auth Bot")
+   - Enter the bot username (must end with `bot`, e.g., `beliarg_auth_bot`)
+4. After creation, you will receive a **Bot Token** - save it!
 
-### Шаг 2: Настройка Web App для бота
+### Step 2: Configure Web App for the Bot
 
-1. Отправьте BotFather команду `/newapp`
-2. Выберите вашего бота из списка
-3. Заполните информацию:
-   - **Title**: Beliarg (или любое другое имя)
-   - **Short name**: beliarg (должен быть уникальным)
-   - **Description**: Описание вашего приложения
-   - **Photo**: (опционально) загрузите иконку
-   - **Web App URL**: URL вашего фронтенда (например: `https://yourdomain.com`)
+1. Send BotFather the `/newapp` command
+2. Select your bot from the list
+3. Fill in the information:
+   - **Title**: Beliarg (or any other name)
+   - **Short name**: beliarg (must be unique)
+   - **Description**: Description of your application
+   - **Photo**: (optional) upload an icon
+   - **Web App URL**: URL of your frontend (e.g., `https://yourdomain.com`)
 
-### Шаг 3: Настройка переменных окружения
+### Step 3: Configure Environment Variables
 
-Убедитесь, что в вашем `.env` файле есть:
+Make sure your `.env` file contains:
 
 ```env
 TELEGRAM_BOT_TOKEN=your_bot_token_from_botfather
 ```
 
-**Важно**: Telegram Bot Authentication работает только когда приложение открыто через Telegram Web App. Пользователи должны открыть ваше приложение через бота в Telegram.
+**Important**: Telegram Bot Authentication only works when the application is opened through Telegram Web App. Users must open your application through the bot in Telegram.
 
-### Шаг 4: Интеграция Telegram Web App на фронтенде
+### Step 4: Telegram Web App Integration on Frontend
 
-Приложение автоматически определяет, запущено ли оно в Telegram Web App, и использует Telegram API для аутентификации. Убедитесь, что:
+The application automatically detects if it's running in Telegram Web App and uses Telegram API for authentication. Make sure that:
 
-1. Ваше приложение доступно по HTTPS (Telegram требует HTTPS для Web Apps)
-2. В HTML добавлен скрипт Telegram Web App (уже добавлен в `index.html`):
+1. Your application is accessible via HTTPS (Telegram requires HTTPS for Web Apps)
+2. The Telegram Web App script is added to HTML (already added in `index.html`):
 
 ```html
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 ```
 
-## Применение миграции базы данных
+## Database Migration
 
-Перед использованием Telegram аутентификации необходимо применить миграцию базы данных:
+Before using Telegram authentication, you need to apply the database migration:
 
 ```bash
 psql -U postgres -d beliarg_db -f sql/add_oauth_fields_to_users.sql
 ```
 
-Или если используете конкретного пользователя:
+Or if using a specific user:
 
 ```bash
 psql -U beliarg_user -d beliarg_db -f sql/add_oauth_fields_to_users.sql
 ```
 
-Миграция добавит следующие поля в таблицу `users`:
-- `provider_type` - тип провайдера ('email', 'telegram')
-- `provider_id` - ID пользователя в провайдере
-- `name` - имя пользователя
-- `avatar_url` - URL аватара пользователя
-- Сделает `password_hash` опциональным (NULL для OAuth пользователей)
+The migration will add the following fields to the `users` table:
+- `provider_type` - provider type ('email', 'telegram')
+- `provider_id` - user ID in the provider
+- `name` - user name
+- `avatar_url` - user avatar URL
+- Makes `password_hash` optional (NULL for OAuth users)
 
-## Проверка настройки
+## Verification
 
 ### Telegram Bot Authentication
 
-1. Убедитесь, что `TELEGRAM_BOT_TOKEN` установлен
-2. Откройте вашего бота в Telegram
-3. Нажмите на кнопку Web App (если настроена) или отправьте команду для открытия Web App
-4. В открывшемся приложении нажмите "ВОЙТИ ЧЕРЕЗ TELEGRAM"
-5. Аутентификация произойдет автоматически с использованием данных Telegram
+1. Make sure `TELEGRAM_BOT_TOKEN` is set
+2. Open your bot in Telegram
+3. Click on the Web App button (if configured) or send a command to open the Web App
+4. In the opened application, click "LOGIN WITH TELEGRAM"
+5. Authentication will occur automatically using Telegram data
 
-## Устранение проблем
+## Troubleshooting
 
-### Telegram Bot Authentication не работает
+### Telegram Bot Authentication Not Working
 
-- Убедитесь, что приложение открыто через Telegram Web App (не в обычном браузере)
-- Проверьте, что `TELEGRAM_BOT_TOKEN` установлен правильно
-- Убедитесь, что ваше приложение доступно по HTTPS (для продакшена)
-- Проверьте консоль браузера на наличие ошибок
-- Убедитесь, что скрипт Telegram Web App загружен (проверьте в DevTools)
+- Make sure the application is opened through Telegram Web App (not in a regular browser)
+- Check that `TELEGRAM_BOT_TOKEN` is set correctly
+- Ensure your application is accessible via HTTPS (for production)
+- Check the browser console for errors
+- Make sure the Telegram Web App script is loaded (check in DevTools)
 
-### Ошибки базы данных
+### Database Errors
 
-- Убедитесь, что миграция применена успешно
-- Проверьте права доступа пользователя базы данных
-- Убедитесь, что таблица `users` существует
+- Make sure the migration was applied successfully
+- Check the database user's permissions
+- Ensure the `users` table exists
 
-## Безопасность
+## Security
 
-- **Никогда не коммитьте** `.env` файл в git
-- Используйте сильные секретные ключи для продакшена
-- Регулярно обновляйте Telegram Bot Token при необходимости
-- Используйте HTTPS в продакшене (обязательно для Telegram Web Apps)
-- Проверяйте подпись данных от Telegram на сервере (уже реализовано)
+- **Never commit** the `.env` file to git
+- Use strong secret keys for production
+- Regularly update Telegram Bot Token if necessary
+- Use HTTPS in production (required for Telegram Web Apps)
+- Verify Telegram data signatures on the server (already implemented)

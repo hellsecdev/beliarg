@@ -524,9 +524,9 @@ const App: React.FC = () => {
         newTask = { 
             ...existing!, 
             ...finalTaskData,
-            // Сохранить completedAt, если задача завершена
+            // Preserve completedAt if task is completed
             completedAt: existing?.isCompleted && !existing?.completedAt 
-                ? Date.now() // Установить текущий timestamp, если задача завершена, но completedAt отсутствует
+                ? Date.now() // Set current timestamp if task is completed but completedAt is missing
                 : existing?.completedAt 
         };
         setTasks(prev => prev.map(t => t.id === taskData.id ? newTask : t));

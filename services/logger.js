@@ -29,7 +29,7 @@ class Logger {
     if (entry.error) {
       message += `❌ Error: ${entry.error.message}\n`;
       if (entry.error.stack) {
-        // Ограничиваем длину stack trace
+        // Limit stack trace length
         const stack = entry.error.stack.split('\n').slice(0, 5).join('\n');
         message += `📍 Stack:\n\`\`\`\n${stack}\n\`\`\`\n`;
       }
@@ -37,7 +37,7 @@ class Logger {
     
     if (entry.context) {
       Object.entries(entry.context).forEach(([key, value]) => {
-        // Маскируем чувствительные данные
+        // Mask sensitive data
         let displayValue = value;
         if (typeof value === 'string' && (key.toLowerCase().includes('token') || key.toLowerCase().includes('password') || key.toLowerCase().includes('secret'))) {
           displayValue = '***';
@@ -56,7 +56,7 @@ class Logger {
       return;
     }
 
-    // Отправляем только ERROR и WARN, INFO слишком много
+    // Send only ERROR and WARN, INFO is too verbose
     if (entry.level === LogLevel.INFO) {
       return;
     }
@@ -82,7 +82,7 @@ class Logger {
         console.error('[Logger] Failed to send message to Telegram:', response.status, errorText);
       }
     } catch (err) {
-      // Не блокируем выполнение при ошибке отправки
+      // Don't block execution on send error
       console.error('[Logger] Error sending to Telegram:', err);
     }
   }
@@ -96,7 +96,7 @@ class Logger {
       timestamp: Date.now(),
     };
 
-    // Всегда логируем в console
+    // Always log to console
     if (level === LogLevel.ERROR) {
       console.error(`[${level.toUpperCase()}]`, message, error || '', context || '');
     } else if (level === LogLevel.WARN) {
@@ -105,7 +105,7 @@ class Logger {
       console.log(`[${level.toUpperCase()}]`, message, context || '');
     }
 
-    // Отправляем в Telegram асинхронно (не блокируем)
+    // Send to Telegram asynchronously (non-blocking)
     this.sendToTelegram(entry).catch(err => {
       console.error('[Logger] Failed to send to Telegram:', err);
     });
