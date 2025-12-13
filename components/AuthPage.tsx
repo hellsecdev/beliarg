@@ -183,6 +183,33 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLogin, lang, onSetLang }) 
                      </button>
                 </div>
 
+                {/* Demo Mode Information Block */}
+                <div className="mt-6 bg-bg-panel border border-hell-700 p-4 shadow-[0_0_20px_rgba(185,28,28,0.1)]">
+                    <div className="space-y-3">
+                        <p className="text-text-secondary text-xs leading-relaxed text-center">
+                            {t.demoModeInfo}
+                        </p>
+                        <p className="text-hell-gold text-xs font-bold text-center">
+                            {t.demoModeWarning}
+                        </p>
+                        <div className="pt-3 border-t border-hell-700/50">
+                            <p className="text-hell-500 text-[10px] font-bold uppercase tracking-wider mb-2 text-center">
+                                {t.demoModeCredentials}
+                            </p>
+                            <div className="flex flex-col gap-2 text-center">
+                                <div className="text-text-primary text-xs font-mono">
+                                    <span className="text-hell-500 text-[10px] uppercase mr-2">{t.emailLabel}:</span>
+                                    <span className="text-hell-gold">{t.demoModeEmail}</span>
+                                </div>
+                                <div className="text-text-primary text-xs font-mono">
+                                    <span className="text-hell-500 text-[10px] uppercase mr-2">{t.passwordLabel}:</span>
+                                    <span className="text-hell-gold">{t.demoModePassword}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 {/* Developer Footer */}
                 <div className="mt-4 text-center pb-4">
                     <a href="https://github.com/D371L" target="_blank" rel="noopener noreferrer" className="text-[10px] text-white/80 hover:text-hell-gold font-mono transition-colors flex items-center justify-center gap-1">
